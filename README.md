@@ -1,34 +1,41 @@
-# NEXUS · BLE Tactical Radar
+# NEXUS · BLE Tactical Radar v2
 
 **NExtended Xperimental USers**  
 Operator: DoubleA · AntManThePro
 
-Elite-class field radar for BLE advertisement scanning. Real `requestLEScan` path with high-fidelity simulation fallback, EMA-filtered RSSI, log-distance path loss, persistent radial slots, and neon field-plate UI.
+Elite field radar for BLE advertisement scanning. Real `requestLEScan` path + high-fidelity simulation. **KalmanJS** (MIT) RSSI filtering for more stable distance estimates via log-distance path loss.
 
 ## Live Demo
 https://antmanthepro.github.io/nexus-ble-radar/
 
-## Features
-- Attempts live Web Bluetooth LE advertisement scanning (Chrome/Edge + experimental flag)
-- High-fidelity simulation with random-walk RSSI, EMA smoothing, device churn
-- Log-distance path loss distance estimation (adjustable n and TxPower in Pro)
-- Modes: ECO / PRECISION / STREET / PRO TOOLS
-- Favorites (persisted), target detail with RSSI sparkline + hex telemetry
-- Export state JSON
-- Honest radio status and limitation notes (no AoA without multi-antenna hardware)
+## What's new in v2
+- **KalmanJS** integrated (MIT, Wouter Bulten) — proper 1D Kalman filter per device for RSSI noise reduction
+- Device trails on the radar
+- Range ring labels (meters)
+- Adjustable Kalman Q in Pro mode
+- Raw vs filtered RSSI in detail panel
+- Trails toggle + keyboard (T)
+- Cleaner status and attribution
 
-## Browser Requirements
-- Chromium-based (Chrome, Edge)
+## Features
+- Live Web Bluetooth LE scan (Chrome/Edge + experimental flag) or high-fidelity sim
+- Log-distance path loss distance estimation
+- Modes: ECO / PRECISION / STREET / PRO TOOLS
+- Favorites (localStorage), detail sparkline, export JSON
+- Honest limitations (no AoA without multi-antenna hardware)
+
+## Browser
+- Chromium (Chrome, Edge)
 - HTTPS or localhost
 - Enable `chrome://flags/#enable-experimental-web-platform-features`
-- Not supported on iOS Safari or Firefox
-- Distances are RSSI estimates. Native app owns the antenna.
+- Not supported on iOS Safari / Firefox
+- Distances remain estimates. Native owns the antenna.
+
+## Open Source
+- **KalmanJS** — https://github.com/wouterbulten/kalmanjs (MIT)  
+  Inlined for zero-dependency RSSI smoothing. Recommended for BLE signal noise.
 
 ## Local
 Open `index.html` in a supported browser.
 
-## Architecture
-Single self-contained HTML. Canvas radar loop + Map-backed device pool. Real scan or sim both feed the same update/draw path. Path loss model and EMA are pure functions.
-
-## License
 MIT
