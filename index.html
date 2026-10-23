@@ -3,1095 +3,1380 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar</title>
+<title>NEXUS · BLE Tactical Radar v4.0.0</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.0.0 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0f' stroke='%2300ff87' stroke-width='1.5'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%2360efff' stroke-width='1.2'/%3E%3Cpath d='M20 42 L32 14 L44 42 M25.5 32 H38.5' fill='none' stroke='%2300ff87' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3.2' fill='%23ff0080'/%3E%3C/svg%3E">
-<script src="https://cdn.tailwindcss.com"></script>
 <style>
-:root { --g:#00ff87; --c:#60efff; --p:#ff0080; --y:#ffcc00; --bg:#0a0a0f; }
-body { background:var(--bg); color:#e5e7eb; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; overflow:hidden; }
-.nexus-stamp { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; padding-top:max(.75rem, env(safe-area-inset-top)); border-bottom:1px solid #00ff8733; }
-.nexus-chip { font-size:.65rem; letter-spacing:.12em; color:var(--c); text-transform:uppercase; }
-.nexus-stamp h1 { font-size:1.6rem; font-weight:800; letter-spacing:.08em; color:var(--g); text-shadow:0 0 12px #00ff8766; margin:0; }
-.nexus-stamp p { font-size:.7rem; color:#9ca3af; margin:0; }
-.glow { text-shadow:0 0 8px currentColor; }
-.panel { background:#0f0f16cc; border:1px solid #00ff8733; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
-.mode-btn { border:1px solid #ffffff22; transition:all .15s; }
-.mode-btn.active { border-color:var(--g); color:var(--g); box-shadow:0 0 12px #00ff8755; }
-.mode-btn.live { border-color:var(--g); color:#0a0a0f; background:var(--g); font-weight:700; }
-.target-row { border-left:3px solid transparent; }
-.target-row.selected { border-left-color:var(--c); background:#60efff11; }
-.target-row.fav { border-left-color:var(--y); }
-.badge { font-size:.62rem; letter-spacing:.14em; padding:.2rem .5rem; border-radius:.3rem; border:1px solid; cursor:pointer; }
-.badge.practice { color:var(--y); border-color:#ffcc0088; }
-.badge.live { color:#0a0a0f; background:var(--g); border-color:var(--g); animation:livepulse 1.6s infinite; }
-@keyframes livepulse { 0%,100% { box-shadow:0 0 0 0 #00ff8788; } 50% { box-shadow:0 0 0 6px #00ff8700; } }
-#help table td { padding:.2rem .4rem; border-bottom:1px solid #ffffff10; vertical-align:top; }
-::-webkit-scrollbar { width:6px; }
-::-webkit-scrollbar-thumb { background:#00ff8744; border-radius:3px; }
+:root{--g:#00ff87;--c:#60efff;--p:#ff0080;--y:#ffcc00;--bg:#0a0a0f;--panel:#0f0f16;--line:#00ff8733;--mut:#8b93a1;--txt:#e5e7eb}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--txt);font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;-webkit-text-size-adjust:100%}
+body{min-height:100vh;overflow-x:hidden}
+button,input{font-family:inherit}
+.top{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.6rem .9rem;border-bottom:1px solid var(--line);padding-top:max(.6rem,env(safe-area-inset-top))}
+.brand{display:flex;align-items:center;gap:.6rem;min-width:0}
+.brand h1{margin:0;font-size:1.35rem;font-weight:800;letter-spacing:.08em;color:var(--g);text-shadow:0 0 12px #00ff8766;line-height:1}
+.brand .sub{font-size:.62rem;color:var(--mut);letter-spacing:.06em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.brand .op{font-size:.6rem;color:var(--c);letter-spacing:.14em;text-transform:uppercase}
+.chips{display:flex;flex-wrap:wrap;gap:.35rem;justify-content:flex-end}
+.chip{display:inline-flex;align-items:center;gap:.3rem;font-size:.62rem;letter-spacing:.12em;text-transform:uppercase;padding:.22rem .5rem;border-radius:999px;border:1px solid currentColor;white-space:nowrap;line-height:1.2}
+.chip.live{color:var(--g);box-shadow:0 0 10px #00ff8755}
+.chip.live::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--g);animation:blink 1s infinite}
+.chip.practice{color:var(--y)}
+.chip.paused{color:var(--mut)}
+.chip.proto{color:var(--c)}
+.chip.ver{color:#fff;border-color:#ffffff44;background:#ffffff0d}
+.chip.alert{color:var(--p);background:#ff008018;box-shadow:0 0 12px #ff008066}
+.chip.tracker{color:var(--p)}
+.chip.fam{color:var(--c)}
+.chip.mine{color:var(--g)}
+.chip.sim{color:var(--y);border-style:dashed}
+@keyframes blink{50%{opacity:.25}}
+.banner{display:flex;gap:.7rem;align-items:flex-start;padding:.55rem .9rem;font-size:.72rem;line-height:1.45;border-bottom:1px solid var(--line)}
+.banner.practice{background:linear-gradient(90deg,#ffcc0014,transparent);color:#f3e3a3}
+.banner.live{background:linear-gradient(90deg,#00ff8714,transparent);color:#b9ffd9}
+.banner.paused{background:#ffffff08;color:#c9ccd2}
+.banner b{letter-spacing:.1em}
+.banner .why{flex:1;min-width:0}
+.banner details{margin-top:.25rem;color:var(--mut)}
+.banner summary{cursor:pointer;color:var(--c)}
+.banner code{color:var(--c);word-break:break-all}
+.follow-strip{display:none;align-items:center;justify-content:space-between;gap:.6rem;padding:.5rem .9rem;background:#ff008014;border-bottom:1px solid #ff008066;font-size:.72rem;color:#ffd0e6}
+.follow-strip.on{display:flex}
+.layout{display:flex;flex-direction:column}
+.stage{position:relative;height:min(52vh,460px);min-height:300px;border-bottom:1px solid var(--line)}
+#radar{display:block;width:100%;height:100%;touch-action:manipulation;cursor:crosshair}
+.hud{position:absolute;background:#0f0f16cc;border:1px solid var(--line);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);padding:.4rem .6rem;font-size:.66rem;border-radius:6px;pointer-events:none}
+.hud.tl{top:.5rem;left:.5rem}
+.hud.tr{top:.5rem;right:.5rem;text-align:right}
+.hud.bl{bottom:.5rem;left:.5rem;right:.5rem;color:var(--mut);font-size:.6rem;line-height:1.4}
+.side{display:flex;flex-direction:column;min-width:0}
+.controls{padding:.6rem;border-bottom:1px solid var(--line);display:flex;flex-direction:column;gap:.45rem}
+.row{display:flex;flex-wrap:wrap;gap:.4rem}
+.btn{appearance:none;background:#ffffff06;color:var(--txt);border:1px solid #ffffff22;border-radius:6px;padding:.55rem .7rem;font-size:.7rem;letter-spacing:.06em;min-height:40px;cursor:pointer;transition:all .15s}
+.btn:hover{border-color:#ffffff55}
+.btn.on,.btn.active{border-color:var(--g);color:var(--g);box-shadow:0 0 12px #00ff8744}
+.btn.primary{border-color:var(--g);color:var(--bg);background:var(--g);font-weight:700}
+.btn.primary.stop{background:transparent;color:var(--g)}
+.btn.pink{border-color:var(--p);color:var(--p)}
+.btn.small{min-height:34px;padding:.35rem .55rem;font-size:.64rem}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.seg{display:grid;grid-template-columns:repeat(4,1fr);gap:.3rem}
+.seg .btn{padding:.4rem .2rem;font-size:.62rem}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;color:var(--mut);font-size:.62rem;letter-spacing:.08em;padding:.7rem .2rem;min-height:44px;cursor:pointer;position:relative}
+.tab.active{color:var(--g);border-bottom-color:var(--g)}
+.tab .badge{display:none;position:absolute;top:.3rem;right:.3rem;background:var(--p);color:#fff;border-radius:999px;font-size:.55rem;padding:0 .3rem;line-height:1.3}
+.tab .badge.on{display:inline-block}
+.pane{display:none;padding:.6rem}
+.pane.active{display:block}
+.filters{display:flex;gap:.3rem;margin-bottom:.45rem;flex-wrap:wrap}
+.list{display:flex;flex-direction:column;gap:.3rem}
+.dev{display:flex;justify-content:space-between;gap:.5rem;padding:.55rem .6rem;border-radius:6px;border-left:3px solid transparent;background:#ffffff04;cursor:pointer;min-height:48px}
+.dev:hover{background:#ffffff0a}
+.dev.sel{border-left-color:var(--c);background:#60efff12}
+.dev.fav{border-left-color:var(--y)}
+.dev.trk{border-left-color:var(--p)}
+.dev .nm{font-size:.82rem;color:#f1f2f4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dev .meta{font-size:.62rem;color:var(--mut);margin-top:.15rem}
+.dev .tags{display:flex;flex-wrap:wrap;gap:.25rem;margin-top:.25rem}
+.dev .tags .chip{font-size:.52rem;padding:.08rem .35rem}
+.dev .r{text-align:right;flex-shrink:0}
+.dev .rssi{color:var(--p);font-size:.8rem}
+.dev .ft{color:var(--g);font-size:.62rem}
+.left{min-width:0;flex:1}
+.card{border:1px solid var(--line);border-radius:8px;padding:.65rem;background:#0f0f16;margin-top:.6rem}
+.card h3{margin:0 0 .4rem;font-size:.66rem;letter-spacing:.14em;color:var(--c);display:flex;justify-content:space-between;align-items:center;gap:.4rem}
+.kv{display:grid;grid-template-columns:1fr 1fr;gap:.45rem .7rem;font-size:.62rem;color:var(--mut)}
+.kv div>span{display:block;color:var(--txt);font-size:.74rem;margin-top:.1rem;word-break:break-all}
+.mono{font-family:inherit}
+.y{color:var(--y)!important}.g{color:var(--g)!important}.c{color:var(--c)!important}.p{color:var(--p)!important}.m{color:var(--mut)!important}
+.note{font-size:.62rem;color:var(--mut);line-height:1.45;margin:.4rem 0 0}
+.nick{display:flex;gap:.35rem;margin-top:.45rem}
+.nick input{flex:1;min-width:0;background:#000;border:1px solid #ffffff22;color:var(--txt);border-radius:6px;padding:.5rem;font-size:.75rem;min-height:40px}
+canvas.spark{width:100%;height:64px;display:block;background:#00000066;border-radius:6px}
+table.dec{width:100%;border-collapse:collapse;font-size:.62rem;table-layout:fixed}
+table.dec td{border-top:1px solid #ffffff10;padding:.32rem .2rem;vertical-align:top;word-break:break-all}
+table.dec td:first-child{color:var(--mut);width:34%}
+.meter{height:22px;border-radius:999px;background:linear-gradient(90deg,#60efff,#00ff87,#ffcc00,#ff0080);position:relative;margin:.5rem 0 .2rem;opacity:.9}
+.meter .needle{position:absolute;top:-4px;width:4px;height:30px;background:#fff;border-radius:2px;box-shadow:0 0 10px #fff;transition:left .25s}
+.heat{font-size:1.6rem;font-weight:800;letter-spacing:.1em;text-align:center;margin:.3rem 0}
+.sliders label{display:grid;grid-template-columns:7.5rem 1fr 2.6rem;align-items:center;gap:.4rem;font-size:.62rem;color:var(--mut);margin:.35rem 0}
+.sliders input[type=range]{width:100%;accent-color:var(--g);min-height:28px}
+.empty{text-align:center;color:var(--mut);font-size:.7rem;padding:1.4rem .5rem}
+.watch-item{border:1px solid #ff008044;background:#ff00800a;border-radius:8px;padding:.55rem;margin-top:.45rem}
+.watch-item.alerting{border-color:var(--p);box-shadow:0 0 14px #ff008044}
+.bar{height:6px;border-radius:4px;background:#ffffff12;overflow:hidden;margin-top:.3rem}
+.bar i{display:block;height:100%;background:var(--p)}
+/* --- C: LIVE path UI (ported from build A, restyled to NEXUS plain CSS) --- */
+.chip.live,.chip.practice,.chip.paused{cursor:pointer}
+.hint{display:none;padding:.55rem .9rem;border-bottom:1px solid #ffcc0066;background:#ffcc000d;font-size:.7rem;line-height:1.45;color:#f3e3a3}
+.hint.on{display:block}
+.hint .row{margin-top:.4rem}
+.kv em{font-style:normal}
+.modal{position:fixed;inset:0;background:#000000cc;display:none;z-index:50;align-items:center;justify-content:center;padding:.75rem}
+.modal.on{display:flex}
+.modal .box{background:#0f0f16;border:1px solid var(--line);border-radius:10px;max-width:34rem;width:100%;max-height:90vh;overflow-y:auto;padding:1rem;font-size:.72rem;line-height:1.5;box-shadow:0 0 30px #00ff8722}
+.modal p{margin:.45rem 0}
+.modal table{width:100%;border-collapse:collapse;font-size:.64rem;table-layout:fixed}
+.modal td{padding:.28rem .3rem;border-bottom:1px solid #ffffff10;vertical-align:top;word-break:break-word}
+.modal td:first-child{width:42%}.modal td:nth-child(2){width:12%}
+.modal code{color:var(--y);word-break:break-all}
+footer{padding:.8rem .9rem 1.2rem;font-size:.58rem;color:#6b7280;border-top:1px solid var(--line);line-height:1.5;padding-bottom:max(1.2rem,env(safe-area-inset-bottom))}
+footer a{color:var(--c)}
+@media (min-width:900px){
+  body{height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  .layout{flex:1;flex-direction:row;min-height:0}
+  .stage{flex:1;height:auto;min-height:0;border-bottom:0;border-right:1px solid var(--line)}
+  .side{width:420px;overflow-y:auto}
+  footer{display:none}
+  .hud.bl{right:auto;max-width:460px}
+}
+@media (max-width:420px){
+  .brand .sub{display:none}
+  .brand svg{width:36px;height:36px}
+  .brand h1{font-size:1.15rem}
+  .chip{font-size:.56rem;padding:.18rem .4rem}
+}
 </style>
 </head>
-<body class="h-screen flex flex-col">
-<header class="nexus-stamp" data-brand="NExtended Xperimental USers">
-  <div>
-    <div class="nexus-chip">DoubleA · AntManThePro</div>
-    <h1>NEXUS</h1>
-    <p>NExtended Xperimental USers</p>
-  </div>
-  <div class="flex items-center gap-3">
-    <button id="mode-badge" class="badge practice" title="What mode am I in?">PRACTICE</button>
-    <svg width="56" height="56" viewBox="0 0 64 64" aria-label="NEXUS sigil">
+<body>
+<header class="top" data-brand="NExtended Xperimental USers">
+  <div class="brand">
+    <svg width="44" height="44" viewBox="0 0 64 64" aria-label="NEXUS sigil">
       <rect width="64" height="64" rx="14" fill="#0a0a0f" stroke="#00ff87" stroke-width="1.5"/>
       <circle cx="32" cy="32" r="19" fill="none" stroke="#60efff" stroke-width="1.2"/>
       <path d="M20 42 L32 14 L44 42 M25.5 32 H38.5" fill="none" stroke="#00ff87" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
       <circle cx="32" cy="32" r="3.2" fill="#ff0080"/>
     </svg>
+    <div style="min-width:0">
+      <div class="op">DoubleA · AntManThePro</div>
+      <h1>NEXUS</h1>
+      <div class="sub">BLE Tactical Radar · NExtended Xperimental USers</div>
+    </div>
+  </div>
+  <div class="chips">
+    <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
+    <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
+    <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
+    <span class="chip ver" id="ver">v4.0.0</span>
   </div>
 </header>
 
-<div class="flex-1 flex flex-col md:flex-row overflow-hidden">
-  <div class="flex-1 relative min-h-0">
-    <canvas id="radar" class="w-full h-full"></canvas>
-    <div class="absolute top-3 left-3 panel px-3 py-2 text-xs max-w-[70%]">
-      <div id="status-line" class="text-[#ffcc00] glow font-bold">● Practice Mode · looking for signals</div>
-      <div id="mode-line" class="text-[#60efff] mt-0.5">VIEW: RADAR</div>
-      <div id="target-count" class="text-[#ffcc00]">DEVICES NEARBY: 0</div>
+<section id="banner" class="banner practice" role="status" aria-live="polite">
+  <div class="why">
+    <b id="banner-title">PRACTICE MODE</b> · <span id="banner-text">Simulated devices so you can learn the tools. Nothing shown here is a real measurement.</span>
+    <details id="banner-how"><summary>How to go LIVE</summary>
+      <div>• Android or desktop <b>Chrome / Edge</b> on HTTPS or localhost.<br>
+      • Open-scan needs <code>chrome://flags/#enable-experimental-web-platform-features</code> → Enabled → relaunch.<br>
+      • iPhone/iPad: Safari (and Chrome/Edge/Firefox on iOS, which use Safari’s engine) has no Web Bluetooth — NEXUS stays PRACTICE there. Open this page in the free <b>Bluefy – Web BLE Browser</b> app to go LIVE one device at a time (<b>+ TRACK A DEVICE</b>). If a device gives no signal reading, NEXUS shows <b>link %</b> (how easily it connects) — never dBm.<br>
+      • Then tap <b>START LIVE SCAN</b> (or <b>+ TRACK A DEVICE</b>) and allow the Bluetooth prompt.</div>
+      <div class="row" style="margin-top:.4rem"><button class="btn small" id="how-bluefy">GET BLUEFY (APP STORE)</button><button class="btn small" id="how-copy">COPY LINK</button><button class="btn small" id="how-full">FULL GUIDE</button></div>
+    </details>
+  </div>
+</section>
+
+<section id="live-hint" class="hint" role="status" aria-live="polite" data-testid="live-hint">
+  <div id="hint-text"></div>
+  <div id="hint-actions" class="row"></div>
+</section>
+
+<section id="follow-strip" class="follow-strip" role="alert">
+  <span id="follow-text">⚠ A tracker seems to be moving with you.</span>
+  <button class="btn small pink" id="follow-review">REVIEW</button>
+</section>
+
+<main class="layout">
+  <div class="stage">
+    <canvas id="radar" aria-label="Radar. Tap a dot to select a device."></canvas>
+    <div class="hud tl">
+      <div id="hud-status" class="y" style="font-weight:700">● PRACTICE · simulated</div>
+      <div id="hud-view" class="c">VIEW: RADAR</div>
+      <div id="hud-count" class="y">DEVICES: 0</div>
     </div>
-    <div id="compass" class="absolute top-3 right-3 panel px-3 py-2 text-xs text-[#60efff] text-right">
-      HEADING: <span id="heading">—</span>
-      <div id="target-dir" class="text-[10px] text-gray-400"></div>
+    <div class="hud tr">
+      <div class="c">HEADING <span id="hud-heading">—</span></div>
+      <div id="hud-profile" class="m">PROFILE: PRECISE</div>
     </div>
-    <div id="live-hint" class="absolute left-3 right-3 md:right-auto md:max-w-md panel px-3 py-2 text-[11px] text-gray-200 hidden" style="top:5.6rem;border-color:#ffcc0066">
-      <div id="hint-text"></div>
-      <div id="hint-actions" class="flex flex-wrap gap-1.5 mt-2"></div>
-    </div>
-    <div class="absolute bottom-3 left-3 right-3 md:right-auto panel px-3 py-2 text-[10px] text-gray-400 max-w-md hidden md:block" id="footnote">
-      Distance is a rough guess from how strong the Bluetooth signal is. Direction is estimated (real phones can't tell exact angle without special antennas). Feet shown. Walk View is a simple 3D preview toward the selected device.
-    </div>
+    <div class="hud bl" id="hud-legend">Ring = rough distance from signal strength (feet). PRACTICE angles are simulated. In LIVE, hollow dots = direction not known yet — phones can't measure true angle-of-arrival. Tap a dot to inspect.</div>
   </div>
 
-  <div class="w-full md:w-96 flex flex-col border-t md:border-t-0 md:border-l border-[#00ff8733] bg-[#0a0a0f] max-h-[50vh] md:max-h-none">
-    <div class="p-3 border-b border-[#00ff8733] space-y-2">
-      <div class="flex flex-wrap gap-1.5">
-        <button id="btn-scan" class="mode-btn px-3 py-1.5 text-xs rounded">START LOOKING</button>
-        <button id="btn-stop" class="mode-btn px-3 py-1.5 text-xs rounded opacity-50">STOP</button>
-        <button id="btn-pulse" class="mode-btn px-3 py-1.5 text-xs rounded">PING</button>
-        <button id="btn-favs" class="mode-btn px-3 py-1.5 text-xs rounded">SAVED ONLY</button>
-        <button id="btn-trails" class="mode-btn px-3 py-1.5 text-xs rounded active">TRAILS</button>
-        <button id="btn-3d" class="mode-btn px-3 py-1.5 text-xs rounded">3D WALK VIEW</button>
+  <aside class="side">
+    <div class="controls">
+      <div class="row">
+        <button id="btn-scan" class="btn primary" data-testid="scan">START LIVE SCAN</button>
+        <button id="btn-pause" class="btn">PAUSE</button>
+        <button id="btn-ping" class="btn">PING</button>
+        <button id="btn-trails" class="btn on">TRAILS</button>
+        <button id="btn-walk" class="btn">WALK VIEW</button>
       </div>
-      <div class="flex flex-wrap gap-1.5">
-        <button id="btn-pick" class="mode-btn px-3 py-1.5 text-xs rounded hidden">+ TRACK A DEVICE</button>
-        <button id="btn-compass" class="mode-btn px-3 py-1.5 text-xs rounded hidden">COMPASS</button>
-        <button id="btn-practice" class="mode-btn px-3 py-1.5 text-xs rounded hidden">BACK TO PRACTICE</button>
-        <button id="btn-help" class="mode-btn px-3 py-1.5 text-xs rounded">HOW TO GO LIVE</button>
+      <div class="row" data-testid="live-row">
+        <button id="btn-pick" class="btn small" style="display:none">+ TRACK A DEVICE</button>
+        <button id="btn-compass" class="btn small" style="display:none">COMPASS</button>
+        <button id="btn-practice" class="btn small" style="display:none" data-testid="back-to-practice">BACK TO PRACTICE</button>
+        <button id="btn-help" class="btn small" data-testid="how-to-go-live">HOW TO GO LIVE</button>
       </div>
-      <div class="flex flex-wrap gap-1.5">
-        <button data-mode="eco" class="mode-btn px-2.5 py-1 text-[10px] rounded">SIMPLE</button>
-        <button data-mode="precision" class="mode-btn active px-2.5 py-1 text-[10px] rounded">NORMAL</button>
-        <button data-mode="street" class="mode-btn px-2.5 py-1 text-[10px] rounded">OUTSIDE</button>
-        <button data-mode="pro" class="mode-btn px-2.5 py-1 text-[10px] rounded">ADVANCED</button>
-      </div>
-      <div id="pro-tools" class="hidden text-[10px] space-y-1 pt-1">
-        <label class="flex items-center gap-2">Guess tightness=<input id="n-slider" type="range" min="1.8" max="4.0" step="0.1" value="2.5" class="flex-1"> <span id="n-val">2.5</span></label>
-        <label class="flex items-center gap-2">Expected strength=<input id="tx-slider" type="range" min="-70" max="-40" step="1" value="-59" class="flex-1"> <span id="tx-val">-59</span></label>
-        <label class="flex items-center gap-2">Smoothing=<input id="q-slider" type="range" min="0.5" max="8" step="0.1" value="3" class="flex-1"> <span id="q-val">3.0</span></label>
-        <button id="btn-export" class="mode-btn px-2 py-1 rounded w-full">SAVE LIST</button>
+      <div class="seg" role="group" aria-label="Scan profile">
+        <button data-mode="eco" class="btn">ECO</button>
+        <button data-mode="precise" class="btn active">PRECISE</button>
+        <button data-mode="outdoor" class="btn">OUTDOOR</button>
+        <button data-mode="pro" class="btn">PRO</button>
       </div>
     </div>
-    <div class="flex-1 overflow-y-auto p-2 space-y-1" id="target-list"></div>
-    <div id="detail" class="border-t border-[#00ff8733] p-3 text-xs hidden overflow-y-auto max-h-[45%]">
-      <div class="flex justify-between items-start">
-        <div>
-          <div id="d-name" class="text-[#60efff] font-bold"></div>
-          <div id="d-type" class="text-[10px] text-gray-400"></div>
+
+    <nav class="tabs" role="tablist">
+      <button class="tab active" data-tab="devices" role="tab">DEVICES</button>
+      <button class="tab" data-tab="watch" role="tab" id="tab-watch">FOLLOWING ME?<span class="badge" id="watch-badge">0</span></button>
+      <button class="tab" data-tab="pro" role="tab" id="tab-pro">PRO TOOLS</button>
+      <button class="tab" data-tab="find" role="tab" id="tab-find">FIND</button>
+    </nav>
+
+    <!-- DEVICES -->
+    <section class="pane active" id="pane-devices">
+      <div class="filters">
+        <button class="btn small active" data-filter="all">ALL</button>
+        <button class="btn small" data-filter="saved">★ SAVED</button>
+        <button class="btn small" data-filter="trackers">TRACKERS</button>
+        <button class="btn small" data-filter="named">IDENTIFIED</button>
+      </div>
+      <div class="list" id="list" data-testid="device-list"></div>
+      <div class="card" id="detail" style="display:none">
+        <h3><span id="d-name">—</span><button class="btn small" id="d-fav" aria-label="Save device">☆ SAVE</button></h3>
+        <div class="note" id="d-brand" style="margin-top:0"></div>
+        <div class="dev-tags" id="d-tags" style="display:flex;gap:.25rem;flex-wrap:wrap;margin:.35rem 0"></div>
+        <div class="kv">
+          <div>ABOUT<span id="d-dist" class="g">—</span></div>
+          <div><em id="d-rssi-lbl">SIGNAL (smoothed)</em><span id="d-rssi" class="p">—</span></div>
+          <div>SEEN THIS SESSION<span id="d-seen">—</span></div>
+          <div>TIME NEARBY<span id="d-time">—</span></div>
+          <div>FIRST SEEN<span id="d-first">—</span></div>
+          <div>BROWSER ID<span id="d-id" class="y">—</span></div>
+          <div style="grid-column:1/-1">DIRECTION (estimate)<span id="d-dir" class="c">—</span></div>
         </div>
-        <button id="d-fav" class="text-xl leading-none">☆</button>
+        <div class="nick">
+          <input id="d-nick" maxlength="32" placeholder="Nickname (e.g. My keys)" aria-label="Nickname">
+          <button class="btn small" id="d-nick-save">NAME IT</button>
+        </div>
+        <div class="row" style="margin-top:.45rem">
+          <button class="btn small" id="d-find">FIND IT</button>
+          <button class="btn small" id="d-decode">DECODE</button>
+          <button class="btn small" id="d-monitor">MONITOR</button>
+          <button class="btn small" id="d-mine">THIS IS MINE</button>
+        </div>
       </div>
-      <div class="grid grid-cols-2 gap-2 mt-2 text-[10px]">
-        <div>ID <div id="d-mac" class="text-[#ffcc00] font-mono break-all"></div></div>
-        <div>ABOUT <div id="d-dist" class="text-[#00ff87] font-mono"></div></div>
-        <div>SIGNAL STRENGTH <div id="d-rssi" class="text-[#ff0080] font-mono"></div></div>
-        <div>RAW READING <div id="d-raw" class="font-mono text-gray-500"></div></div>
+    </section>
+
+    <!-- FOLLOWING ME -->
+    <section class="pane" id="pane-watch" data-testid="following-panel">
+      <div class="card" style="margin-top:0;border-color:#ff008066">
+        <h3><span class="p">FOLLOWING ME? · TRACKER WATCH</span><span class="chip proto">PROTO</span></h3>
+        <p class="note" style="margin-top:0">Personal-safety check for <b>item trackers</b> (AirTag-style Find My, Tile, Chipolo, SmartTag, Google Find Hub, DULT tags) that keep showing up near you. Mark your own tags as <b>mine</b> so they never alert. If an unknown tracker alerts: use <b>FIND</b> to locate it, check bags, coat and car, and use your phone's built-in unknown-tracker alerts. If you feel unsafe, contact local law enforcement.</p>
+        <div class="sliders">
+          <label>Alert after<input id="follow-min" type="range" min="3" max="60" step="1" value="10"><span id="follow-min-val">10m</span></label>
+        </div>
+        <p class="note">Rule: tracker-type device, not marked mine, nearby ≥ the time above, with mid/strong signal (≥ −80 dBm) at least 60% of that time. Trackers rotate their Bluetooth address (often every ~15 min near the owner), so one tag can appear as a new ID — NEXUS groups by brand + type to soften that, but this is an estimate, not proof.</p>
       </div>
-      <div class="mt-2 text-[10px] text-gray-500">TECH DETAILS</div>
-      <div id="d-hex" class="font-mono text-[10px] text-[#60efff] break-all whitespace-pre-wrap"></div>
-      <div class="mt-2 text-[10px] text-gray-500">STRENGTH OVER TIME</div>
-      <canvas id="spark" width="320" height="40" class="w-full h-10 bg-black/40 rounded"></canvas>
-      <div class="mt-2 text-[10px] text-gray-500">DIRECTION (estimate)</div>
-      <div id="d-dir" class="text-[#60efff] font-mono"></div>
+      <div id="watch-list"></div>
+    </section>
+
+    <!-- PRO TOOLS -->
+    <section class="pane" id="pane-pro" data-testid="pro-panel">
+      <div class="note" id="pro-target" style="margin-top:0">Pick a device in DEVICES or tap a radar dot.</div>
+      <div class="card">
+        <h3>SIGNAL MONITOR<span class="m" id="mon-rate">—</span></h3>
+        <canvas id="mon" class="spark" width="640" height="128"></canvas>
+        <div class="kv" style="margin-top:.45rem">
+          <div>RAW / SMOOTHED<span id="mon-rssi">—</span></div>
+          <div>ABOUT<span id="mon-dist" class="g">—</span></div>
+          <div>QUALITY<span id="mon-q">—</span></div>
+          <div>JITTER (σ)<span id="mon-sd">—</span></div>
+        </div>
+        <p class="note"><span class="c">━</span> smoothed (Kalman) · <span class="m">┄</span> raw. Distance uses a path-loss model; walls, bodies and pockets swing it a lot.</p>
+      </div>
+      <div class="card" id="decoder-card" data-testid="decoder">
+        <h3>ADVERTISEMENT DECODER<span id="dec-src" class="chip sim">—</span></h3>
+        <table class="dec"><tbody id="dec-body"><tr><td>—</td><td>Select a device</td></tr></tbody></table>
+        <p class="note">Company IDs and 16-bit service UUIDs are from the Bluetooth SIG assigned-numbers list (small inlined subset). Browsers may hide some fields (Web Bluetooth blocklist), and the ID is a per-site random ID, not the MAC.</p>
+      </div>
+      <div class="card">
+        <h3>GATT EXPLORER<span class="chip proto">PROTO</span></h3>
+        <p class="note" style="margin-top:0">Web Bluetooth can only connect to <b>one device you pick</b> in the browser's chooser — it cannot connect to everything it hears. Read-only: lists services and characteristics, reads Device Name / Battery / Device Info when allowed.</p>
+        <div class="row" style="margin-top:.45rem"><button class="btn small" id="gatt-pick">PICK &amp; CONNECT</button><button class="btn small" id="gatt-dc" disabled>DISCONNECT</button></div>
+        <div id="gatt-out" class="note" style="white-space:pre-wrap;word-break:break-all"></div>
+      </div>
+      <div class="card sliders">
+        <h3>CALIBRATION</h3>
+        <label>Env. factor N<input id="n-slider" type="range" min="1.6" max="4.0" step="0.1" value="2.5"><span id="n-val">2.5</span></label>
+        <label>RSSI @ 1 m<input id="tx-slider" type="range" min="-75" max="-40" step="1" value="-59"><span id="tx-val">-59</span></label>
+        <label>Smoothing Q<input id="q-slider" type="range" min="0.5" max="8" step="0.1" value="3"><span id="q-val">3.0</span></label>
+        <p class="note">N≈2.0 open air, 2.5–3 indoors, 3–4 crowded/walls. If a device advertises TX power, NEXUS uses TX−41 dB as its 1 m reference.</p>
+        <div class="row"><button class="btn small" id="btn-csv">EXPORT CSV</button><button class="btn small" id="btn-json">EXPORT JSON</button><button class="btn small" id="btn-forget">FORGET MEMORY</button></div>
+      </div>
+    </section>
+
+    <!-- FIND -->
+    <section class="pane" id="pane-find" data-testid="find-panel">
+      <div class="card" style="margin-top:0">
+        <h3>FIND MODE<span class="chip proto">PROTO</span></h3>
+        <div id="find-target" class="note" style="margin-top:0">Pick a device first.</div>
+        <div class="meter"><div class="needle" id="find-needle" style="left:0%"></div></div>
+        <div class="row" style="justify-content:space-between;font-size:.56rem;color:var(--mut)"><span>COLD</span><span>WARM</span><span>HOT</span></div>
+        <div class="heat" id="find-heat">—</div>
+        <div class="note" id="find-trend" style="text-align:center">—</div>
+        <div class="row" style="margin-top:.5rem">
+          <button class="btn small" id="find-sound">🔈 GEIGER OFF</button>
+          <button class="btn small" id="find-vibe">VIBRATE OFF</button>
+          <button class="btn small" id="find-compass">ENABLE COMPASS</button>
+          <button class="btn small" id="find-sweep">START SWEEP</button>
+        </div>
+        <div class="note" id="find-sweep-out"></div>
+        <p class="note"><b>How to sweep:</b> hold the phone flat at chest height and turn slowly in a full circle (~20 s). Your body blocks signal behind you, so the heading where it reads strongest is the best guess. Then walk that way and follow HOT/COLD. Direction is <b>estimated from your motion + signal change</b>, not true angle-of-arrival.</p>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<div id="help" class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title" data-testid="help-modal">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <b id="help-title" class="g" style="letter-spacing:.1em">HOW TO GO LIVE · LIVE MODE</b>
+      <button class="btn small" id="help-close">CLOSE</button>
     </div>
+    <div id="help-verdict" class="y" style="margin-bottom:.5rem"></div>
+    <div id="help-mode-note" class="note" style="margin:0 0 .6rem"></div>
+    <div class="note" style="margin:0 0 .2rem">WHAT THIS BROWSER CAN DO (checked just now)</div>
+    <table id="cap-table"></table>
+    <div class="note" style="margin:.8rem 0 .2rem">HOW TO GO LIVE</div>
+    <p><b class="c">iPhone / iPad:</b> Safari can't do Bluetooth — and neither can Chrome, Edge or Firefox on iPhone (Apple makes them all use Safari's engine). Install the free <b>Bluefy – Web BLE Browser</b> app, open this page in it, and allow Bluetooth. Then tap <b>START LIVE SCAN</b> or <b>+ TRACK A DEVICE</b>. Bluefy lets you pick devices one at a time; if a device can't give a signal reading, NEXUS measures how easily it connects instead — shown as <b>link %</b>, not dBm.</p>
+    <div class="row"><button class="btn small primary" id="help-bluefy">GET BLUEFY (APP STORE)</button><button class="btn small" id="help-copy">COPY LINK</button></div>
+    <p><b class="c">Android:</b> Use Chrome. Turn on Bluetooth and Location, and allow Chrome “Nearby devices”. To see <i>everything</i> around you, open <code>chrome://flags/#enable-experimental-web-platform-features</code>, set it to Enabled, relaunch. Without the flag you can still track devices one at a time.</p>
+    <p><b class="c">Computer:</b> Chrome or Edge on Windows/Mac (same flag for the full scan). Firefox and Safari can't do Bluetooth.</p>
+    <p class="note">Live Mode only reads the public “I'm here” broadcasts devices already send. It doesn't pair, doesn't connect (except GATT Explorer and Bluefy's link check, which only touch the one device you picked), and nothing leaves your phone. Many phones change their Bluetooth ID every few minutes on purpose, so the same phone can show up as a “new” device.</p>
+    <p class="note">NEXUS is a personal-safety and find-my-stuff tool: locate your own keys, earbuds and tags, and check whether an unknown item tracker is travelling with you. Distances and directions are estimates, not proof.</p>
   </div>
 </div>
 
-<div id="help" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-3">
-  <div class="panel rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 text-xs text-gray-200">
-    <div class="flex justify-between items-center mb-2">
-      <div class="text-[#00ff87] font-bold text-sm glow">LIVE MODE · HOW IT WORKS</div>
-      <button id="help-close" class="mode-btn px-2 py-1 rounded">CLOSE</button>
-    </div>
-    <div id="help-verdict" class="mb-3 text-[#ffcc00]"></div>
-    <div id="help-mode-note" class="mb-3 text-[10px] text-gray-400"></div>
-    <div class="text-[10px] text-gray-500 mb-1">WHAT THIS BROWSER CAN DO (checked just now)</div>
-    <table class="w-full text-[11px] mb-3" id="cap-table"></table>
-    <div class="text-[10px] text-gray-500 mb-1">HOW TO GO LIVE</div>
-    <div class="space-y-2 text-[11px] leading-relaxed">
-      <div><span class="text-[#60efff] font-bold">iPhone / iPad:</span> Safari can't do Bluetooth — and neither can Chrome, Edge or Firefox on iPhone (Apple makes them all use Safari's engine). Install the free <b>Bluefy – Web BLE Browser</b> app, open this page in it, and allow Bluetooth. Then tap <b>START LOOKING</b> (or <b>+ TRACK A DEVICE</b>).</div>
-      <div><span class="text-[#60efff] font-bold">Android:</span> Use Chrome. Turn on Bluetooth and Location, and allow Chrome “Nearby devices”. To see <i>everything</i> around you, open <span class="text-[#ffcc00]">chrome://flags/#enable-experimental-web-platform-features</span>, set it to Enabled, relaunch. Without the flag you can still track devices one at a time.</div>
-      <div><span class="text-[#60efff] font-bold">Computer:</span> Chrome or Edge on Windows/Mac (same flag for the full scan). Firefox and Safari can't do Bluetooth.</div>
-      <div class="text-gray-400">Live Mode only reads the public “I'm here” broadcasts devices already send. It doesn't pair, doesn't connect (except in Bluefy's link check, which just opens and closes a connection to the one device you picked), and nothing leaves your phone. Many phones change their Bluetooth ID every few minutes on purpose, so the same phone can show up as a “new” device.</div>
-    </div>
-  </div>
-</div>
-
+<footer>
+  NEXUS BLE Tactical Radar v4.0.0 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+</footer>
 <script>
-// KalmanJS (MIT) — Wouter Bulten — inlined
+// KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
-
-const METERS_TO_FEET = 3.28084;
-const NEXUS_VERSION = 'v4 · Live Mode';
-
+</script>
+<script>
+/* NEXUS · BLE Tactical Radar v4.0.0 — DoubleA (AntManThePro) — MIT */
 (() => {
-  const $ = id => document.getElementById(id);
-  const canvas = $('radar');
-  const ctx = canvas.getContext('2d', { alpha: true });
-  const spark = $('spark');
-  const sctx = spark.getContext('2d');
+'use strict';
+const VERSION = '4.0.0';
+const M2FT = 3.28084;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hex = (dv) => { if (!dv) return ''; const b = dv instanceof DataView ? new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength) : dv; return Array.from(b, x => x.toString(16).padStart(2,'0').toUpperCase()).join(' '); };
+const bytes = (dv) => dv instanceof DataView ? new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength) : (dv || new Uint8Array());
+const h4 = n => '0x' + n.toString(16).toUpperCase().padStart(4,'0');
+const fmtDur = ms => { const s = Math.max(0, Math.round(ms/1000)); if (s < 60) return s + 's'; const m = Math.floor(s/60); if (m < 60) return m + 'm ' + (s%60) + 's'; return Math.floor(m/60) + 'h ' + (m%60) + 'm'; };
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const fmtTime = t => t ? new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}) : '—';
 
-  let CX, CY, R, sweep = 0;
-  let mode = 'precision', favsOnly = false, showTrails = true;
-  let viewMode = 'radar'; // 'radar' or 'walk'
-  let scanning = false, bleScan = null;
-  let realRadio = false;          // true = Live Mode (real Bluetooth readings only)
-  let liveKind = null;            // 'scan' (everything nearby) | 'pick' (devices the user picked)
-  let pathLossN = 2.5, defaultTx = -59, kalmanQ = 3;
-  let selectedId = null, pulseUntil = 0;
-  let walkDist = 0;               // practice-only "walked" feet in 3D view
-  let heading = null;             // compass degrees (0 = N), null if unknown
-  let wakeLock = null;
-  let lastListRender = 0;
-  let btAvailable = null;         // navigator.bluetooth.getAvailability() result
-  const seenEvents = new WeakSet();
+/* ---------- Bluetooth SIG assigned numbers (small inlined subset) ---------- */
+const COMPANY = {
+  0x0000:'Ericsson',0x0001:'Nokia',0x0002:'Intel',0x0006:'Microsoft',0x0008:'Motorola',0x000A:'Qualcomm (QTIL)',0x000D:'Texas Instruments',
+  0x000F:'Broadcom',0x001D:'Qualcomm',0x004C:'Apple',0x0055:'Plantronics',0x0057:'Harman',0x0059:'Nordic Semiconductor',0x0067:'GN Hearing',
+  0x006B:'Polar',0x0075:'Samsung',0x0087:'Garmin',0x0089:'GN Hearing',0x009E:'Bose',0x00C4:'LG Electronics',0x00CC:'Beats',0x00D1:'Polar',
+  0x00D7:'Qualcomm',0x00E0:'Google',0x0103:'Bang & Olufsen',0x012D:'Sony',0x013C:'Murata',0x0157:'Huami (Amazfit/Zepp)',0x0171:'Amazon',
+  0x018E:'Google',0x01AB:'Meta',0x01B5:'Nest Labs',0x01DA:'Logitech',0x01DD:'Philips',0x01F1:'Zebra',0x022B:'Tesla',0x027D:'Huawei',
+  0x02B2:'Oura',0x02C5:'Lenovo',0x02E5:'Espressif',0x02FF:'Silicon Labs',0x0304:'Oura',0x038F:'Xiaomi',0x03FF:'Withings',0x041E:'Dell',
+  0x0494:'Sennheiser',0x04AD:'Shure',0x058E:'Meta (Reality Labs)',0x05A7:'Sonos',0x060F:'Signify (Philips Hue)',0x067C:'Tile',0x072F:'OnePlus',
+  0x075A:'Harman',0x0768:'Peloton',0x079A:'OPPO',0x07C9:'Skullcandy',0x0837:'vivo',0x0870:'Wyze',0x08A4:'realme',0x08C3:'Chipolo',
+  0x0BA3:'Sonova',0x0CC2:'Anker',0x0CCB:'Nothing',0x0E41:'ASUS'
+};
+// 16-bit service UUIDs: SIG standard + member UUIDs relevant to brand/type guessing
+const SVC = {
+  0x1800:'Generic Access',0x1801:'Generic Attribute',0x1802:'Immediate Alert',0x1803:'Link Loss',0x1804:'Tx Power',0x180A:'Device Information',
+  0x180D:'Heart Rate',0x180F:'Battery',0x1812:'HID (keyboard/mouse)',0x1816:'Cycling Speed & Cadence',0x1818:'Cycling Power',0x181A:'Environmental Sensing',
+  0x181C:'User Data',0x1826:'Fitness Machine',0x183B:'Binary Sensor',0x184E:'Audio Stream Control',0x1853:'Common Audio',
+  0xFCB2:'DULT unwanted-tracking (Apple-assigned)',0xFD44:'Apple · Find My accessory',0xFD5A:'Samsung · SmartTag',0xFD59:'Samsung',0xFD69:'Samsung',
+  0xFD6F:'Exposure Notification',0xFD84:'Tile',0xFE2C:'Google · Fast Pair',0xFE33:'Chipolo',0xFE65:'Chipolo',0xFE95:'Xiaomi · MiBeacon',
+  0xFE9F:'Google',0xFEAA:'Google · Eddystone',0xFEB2:'Microsoft',0xFEC7:'Apple',0xFED8:'Google',0xFEEC:'Tile',0xFEED:'Tile',0xFE59:'Nordic DFU',
+  0xFE1F:'Garmin',0xFE03:'Amazon',0xFE00:'Amazon',0xFEBE:'Bose',0xFD82:'Sony',0xFDDB:'Samsung'
+};
+const short = uuid => { if (typeof uuid === 'number') return uuid; const m = /^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(uuid||''); return m ? parseInt(m[1],16) : null; };
+const svcName = u => { const s = short(u); return s != null ? (SVC[s] ? h4(s)+' '+SVC[s] : h4(s)) : String(u); };
+const APPLE_TYPES = {0x02:'iBeacon',0x03:'AirPrint',0x05:'AirDrop',0x06:'HomeKit',0x07:'Proximity Pairing (AirPods/Beats)',0x09:'AirPlay Target',0x0A:'AirPlay Source',0x0B:'Magic Switch',0x0C:'Handoff',0x0D:'Tethering Target',0x0E:'Tethering Source',0x0F:'Nearby Action',0x10:'Nearby Info',0x12:'Find My (offline finding)',0x16:'Nearby (Apple)'};
 
-  const devices = new Map();
-  const TYPES = ['AUDIO','BEACON','WEARABLE','PHONE','SENSOR','TRACKER','UNKNOWN'];
-  const NAMES = {
-    AUDIO: ['AirPods Pro','Sony WH','Galaxy Buds','Bose QC'],
-    BEACON: ['Smart Tag','Tile','iBeacon','BLE Beacon'],
-    WEARABLE: ['Fitness Band','Nordic Sensor','Apple Watch','Whoop'],
-    PHONE: ['iPhone','Pixel','Galaxy','Unknown Phone'],
-    SENSOR: ['Temp Probe','Door Sensor','Motion','Humidity'],
-    TRACKER: ['AirTag','Chipolo','Unknown Tracker','Pet Collar'],
-    UNKNOWN: ['Unknown Peripheral','Hidden Device','???']
-  };
-  const DIR_NAMES = ['N','NE','E','SE','S','SW','W','NW'];
-
-  // ---------- capability check ----------
-  const UA = navigator.userAgent || '';
-  const CAP = {
-    iOS: /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
-    android: /Android/i.test(UA),
-    firefox: /Firefox|FxiOS/i.test(UA),
-    chromium: /Chrome|Chromium|CriOS|Edg\//.test(UA),
-    secure: window.isSecureContext === true,
-    bt: !!navigator.bluetooth,
-  };
-  CAP.scan = CAP.bt && typeof navigator.bluetooth.requestLEScan === 'function';
-  CAP.pick = CAP.bt && typeof navigator.bluetooth.requestDevice === 'function';
-  CAP.watch = CAP.bt && typeof window.BluetoothDevice === 'function' && 'watchAdvertisements' in BluetoothDevice.prototype;
-  CAP.bluefy = CAP.iOS && CAP.bt;
-  CAP.orientation = 'DeviceOrientationEvent' in window;
-  CAP.orientationNeedsPermission = CAP.orientation && typeof DeviceOrientationEvent.requestPermission === 'function';
-
-  // ---------- helpers ----------
-  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-  const sleep = ms => new Promise(r => setTimeout(r, ms));
-  function toFeet(m) { return m * METERS_TO_FEET; }
-  function degToDir(deg) { return DIR_NAMES[Math.round((((deg % 360) + 360) % 360) / 45) % 8]; }
-  // angles are compass radians: 0 = North, clockwise
-  function angleToDir(a) { return degToDir(a * 180 / Math.PI); }
-  function polar(a, r) { return { x: Math.sin(a) * r, y: -Math.cos(a) * r }; }
-  function hashAngle(str) { let h = 2166136261; for (const ch of String(str)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) / 4294967296) * Math.PI * 2; }
-  function hexOf(dv, max = 40) {
-    const b = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
-    const s = Array.from(b.slice(0, max), x => x.toString(16).padStart(2, '0')).join(' ');
-    return b.length > max ? s + ' …' : s;
-  }
-  function uuid16(u) {
-    if (typeof u === 'number') return u.toString(16).padStart(4, '0');
-    const m = /^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(String(u));
-    return m ? m[1].toLowerCase() : null;
-  }
-
-  function resize() {
-    const rect = canvas.getBoundingClientRect();
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = rect.width * dpr;
-    canvas.height = rect.height * dpr;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    CX = rect.width / 2;
-    CY = rect.height / 2;
-    R = Math.min(CX, CY) * 0.88;
-  }
-  window.addEventListener('resize', resize);
-  resize();
-
-  function estimateDistance(rssi, tx, n) {
-    const d = Math.pow(10, (tx - rssi) / (10 * n));
-    return Math.max(0.3, Math.min(130, d)); // meters
-  }
-
-  // ---------- favorites (by id, survive mode switches) ----------
-  let favIds = new Set();
-  try { favIds = new Set(JSON.parse(localStorage.getItem('nexus-ble-favs') || '[]')); } catch (e) {}
-  function saveFavs() { try { localStorage.setItem('nexus-ble-favs', JSON.stringify([...favIds])); } catch (e) {} }
-
-  function makeDevice(id, name, type, mac, raw, angle) {
-    return {
-      id, name, type, mac,
-      angle: angle ?? Math.random() * Math.PI * 2,
-      dirKnown: !realRadio,          // practice dots have a (pretend) direction
-      rawRssi: raw,
-      filteredRssi: raw,
-      kf: new KalmanFilter({ R: 0.01, Q: kalmanQ }),
-      txPower: defaultTx + (Math.random() - 0.5) * 6,
-      measured1m: null,
-      distanceM: 1,
-      history: [],
-      samples: [],                   // {t, v} for warmer/colder trend
-      trail: [],
-      bear: new Array(24).fill(null),// RSSI by compass heading (15° buckets)
-      lastSeen: Date.now(),
-      firstSeen: Date.now(),
-      count: 0,
-      favorite: favIds.has(id),
-      vendor: '', tags: [], tech: '',
-      unit: 'dBm',                   // 'dBm' or 'link' (Bluefy link-quality score)
-      hex: '0x' + Math.abs(Math.round(raw)).toString(16).toUpperCase()
-    };
-  }
-
-  function seedSim() {
-    for (let i = 0; i < 5; i++) addSimDevice(-50 - Math.random() * 35);
-  }
-  function addSimDevice(raw) {
-    const type = TYPES[Math.floor(Math.random() * TYPES.length)];
-    const name = NAMES[type][Math.floor(Math.random() * NAMES[type].length)];
-    const mac = Array.from({length: 6}, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase()).join(':');
-    const d = makeDevice(mac, name, type, mac, raw);
-    d.tech = 'PRACTICE · made-up device';
-    devices.set(d.id, d);
-  }
-
-  // ---------- advertisement decoding (live) ----------
-  const VENDORS = {
-    0x004C: 'Apple', 0x0006: 'Microsoft', 0x0075: 'Samsung', 0x00E0: 'Google', 0x0087: 'Garmin',
-    0x0059: 'Nordic Semi', 0x000D: 'Texas Instruments', 0x02E5: 'Espressif', 0x0499: 'Ruuvi',
-    0x038F: 'Xiaomi', 0x012D: 'Sony', 0x009E: 'Bose', 0x006B: 'Polar', 0x0171: 'Amazon',
-    0x01AB: 'Meta', 0x01DA: 'Logitech', 0x0057: 'Harman (JBL)', 0x0310: 'SGL Italia', 0x0002: 'Intel',
-    0x000F: 'Broadcom', 0x001D: 'Qualcomm', 0x0131: 'Cypress', 0x0822: 'adafruit'
-  };
-  const SERVICES = {
-    'feaa': ['BEACON', 'Eddystone beacon'], 'fd6f': ['PHONE', 'Exposure Notification'],
-    '180d': ['WEARABLE', 'Heart rate'], '1814': ['WEARABLE', 'Running speed'],
-    'fe2c': ['AUDIO', 'Google Fast Pair'], 'feed': ['TRACKER', 'Tile'], 'feec': ['TRACKER', 'Tile'],
-    'fd84': ['TRACKER', 'Tile'], 'fd5a': ['TRACKER', 'Samsung SmartTag'], 'fe9f': [null, 'Google'],
-    '1812': ['INPUT', 'Keyboard/mouse (HID)'], '181a': ['SENSOR', 'Environmental sensor'],
-    '1809': ['SENSOR', 'Thermometer'], '1816': ['SENSOR', 'Cycling speed/cadence'],
-    '1818': ['SENSOR', 'Cycling power'], 'fe95': ['SENSOR', 'Xiaomi MiBeacon'],
-    'fcd2': ['SENSOR', 'BTHome sensor'], '180f': [null, 'Battery'], '184e': ['AUDIO', 'LE Audio']
-  };
-  const APPLE_TYPES = {
-    0x02: ['BEACON', 'iBeacon'], 0x05: ['PHONE', 'AirDrop'], 0x07: ['AUDIO', 'AirPods/Beats'],
-    0x09: [null, 'AirPlay'], 0x0C: ['PHONE', 'Handoff'], 0x0F: ['PHONE', 'Nearby Action'],
-    0x10: ['PHONE', 'Apple Nearby (iPhone/iPad/Mac/Watch)'], 0x12: ['TRACKER', 'Find My (AirTag or Find My gear)']
-  };
-  function guessFromName(n) {
-    if (/airpods|buds|beats|bose|jbl|sony wh|wf-|headphone|speaker|soundcore|jabra/i.test(n)) return 'AUDIO';
-    if (/watch|band|fitbit|garmin|whoop|oura|amazfit|mi band/i.test(n)) return 'WEARABLE';
-    if (/iphone|pixel|galaxy s|phone|oneplus|moto/i.test(n)) return 'PHONE';
-    if (/tile|airtag|tag|chipolo|tracker/i.test(n)) return 'TRACKER';
-    if (/beacon/i.test(n)) return 'BEACON';
-    if (/macbook|laptop|pc|desktop|surface|imac/i.test(n)) return 'COMPUTER';
-    if (/keyboard|mouse|mx |controller|gamepad|remote/i.test(n)) return 'INPUT';
-    if (/tv|roku|chromecast|fire ?tv/i.test(n)) return 'TV';
-    if (/sensor|thermo|temp|ruuvi|hygro|govee|switchbot/i.test(n)) return 'SENSOR';
-    return null;
-  }
-  function decodeAdv(ev) {
-    const out = { name: (ev.device && ev.device.name) || ev.name || '', type: null, vendor: '', tags: [], lines: [], measured1m: null };
-    const setType = t => { if (t && !out.type) out.type = t; };
-    try {
-      if (ev.manufacturerData) ev.manufacturerData.forEach((dv, cid) => {
-        const v = VENDORS[cid];
-        if (v && !out.vendor) out.vendor = v;
-        out.lines.push(`maker 0x${Number(cid).toString(16).padStart(4, '0')}${v ? ' ' + v : ''}: ${hexOf(dv)}`);
-        if (cid === 0x004C && dv.byteLength >= 1) {
-          const at = APPLE_TYPES[dv.getUint8(0)];
-          if (at) { setType(at[0]); out.tags.push(at[1]); }
-          if (dv.getUint8(0) === 0x02 && dv.byteLength >= 23) out.measured1m = dv.getInt8(22);
-        }
-        if (cid === 0x0006) setType('COMPUTER');
-      });
-      if (ev.serviceData) ev.serviceData.forEach((dv, key) => {
-        const s = uuid16(key);
-        const sv = s && SERVICES[s];
-        if (sv) { setType(sv[0]); out.tags.push(sv[1]); }
-        out.lines.push(`service ${s || key}: ${hexOf(dv)}`);
-        if (s === 'feaa' && dv.byteLength >= 2 && (dv.getUint8(0) === 0x00 || dv.getUint8(0) === 0x10)) out.measured1m = dv.getInt8(1) - 41; // Eddystone tx@0m → @1m
-      });
-      (ev.uuids || []).forEach(u => {
-        const s = uuid16(u); const sv = s && SERVICES[s];
-        if (sv) { setType(sv[0]); if (!out.tags.includes(sv[1])) out.tags.push(sv[1]); }
-      });
-    } catch (e) { /* malformed packet — ignore the extras */ }
-    if (out.name) setType(guessFromName(out.name));
-    out.tags = [...new Set(out.tags)];
-    return out;
-  }
-
-  // ---------- feeding real readings ----------
-  function feed(dev, raw, now) {
-    dev.rawRssi = raw;
-    dev.filteredRssi = dev.kf.filter(raw);
-    dev.lastSeen = now;
-    dev.count++;
-    const ref = dev.measured1m ?? defaultTx;
-    dev.distanceM = estimateDistance(dev.filteredRssi, ref, pathLossN);
-    dev.history.push(dev.filteredRssi);
-    if (dev.history.length > 40) dev.history.shift();
-    dev.samples.push({ t: now, v: dev.filteredRssi });
-    while (dev.samples.length && now - dev.samples[0].t > 12000) dev.samples.shift();
-    // direction by turning in a circle (your body blocks signal from behind you)
-    if (heading != null) {
-      const b = Math.round(heading / 15) % 24;
-      dev.bear[b] = dev.bear[b] == null ? raw : dev.bear[b] * 0.6 + raw * 0.4;
-      const est = estimateBearing(dev);
-      if (est != null) { dev.angle = est * Math.PI / 180; dev.dirKnown = true; }
-    }
-    const dn = Math.min(1, dev.distanceM / 30);
-    const p = polar(dev.angle, R * dn);
-    dev.trail.push({ x: p.x, y: p.y, t: now });
-    if (dev.trail.length > 12) dev.trail.shift();
-  }
-  function estimateBearing(dev) {
-    const filled = dev.bear.map((v, i) => v == null ? null : i).filter(i => i != null);
-    if (filled.length < 8) return null; // need ~120° of turning
-    const vals = filled.map(i => dev.bear[i]);
-    if (Math.max(...vals) - Math.min(...vals) < 4) return null; // no clear strong side
-    let best = null, bestScore = -Infinity;
-    for (const i of filled) { // smooth with neighbours
-      const nb = [-1, 0, 1].map(k => dev.bear[(i + k + 24) % 24]).filter(v => v != null);
-      const s = nb.reduce((a, b) => a + b, 0) / nb.length;
-      if (s > bestScore) { bestScore = s; best = i; }
-    }
-    return best * 15;
-  }
-  function bearingProgress(dev) { return dev.bear.filter(v => v != null).length; }
-
-  function onAdv(ev) {
-    if (!realRadio || !ev || !ev.device) return;
-    if (seenEvents.has(ev)) return; // same event seen via device + navigator
-    seenEvents.add(ev);
-    const raw = ev.rssi;
-    if (typeof raw !== 'number' || !isFinite(raw) || raw >= 20 || raw < -127) return;
-    const now = Date.now();
-    const id = ev.device.id;
-    const info = decodeAdv(ev);
-    let dev = devices.get(id);
-    if (!dev) {
-      dev = makeDevice(id, info.name || 'Unknown Device', info.type || 'UNKNOWN', String(id).slice(0, 12) + (String(id).length > 12 ? '…' : ''), raw, hashAngle(id));
-      dev.dirKnown = false;
-      dev.txPower = null;
-      devices.set(id, dev);
-    }
-    if (info.name && dev.name !== info.name) dev.name = info.name;
-    if (info.type && (dev.type === 'UNKNOWN' || dev.type === 'PHONE')) dev.type = info.type;
-    if (info.vendor) dev.vendor = info.vendor;
-    if (info.tags.length) dev.tags = info.tags;
-    if (info.measured1m != null) dev.measured1m = info.measured1m;
-    else if (typeof ev.txPower === 'number' && isFinite(ev.txPower) && ev.txPower < 30) dev.measured1m = clamp(Math.round(ev.txPower - 41), -70, -45); // tx@0m → @1m, kept sane (many devices misreport)
-    dev.tech = [
-      'LIVE · real Bluetooth broadcast',
-      dev.vendor ? 'Maker: ' + dev.vendor : 'Maker: not announced',
-      dev.tags.length ? 'Looks like: ' + dev.tags.join(', ') : '',
-      dev.measured1m != null ? `Announced strength @1m: ${dev.measured1m} dBm` : `Strength @1m not announced (using ${defaultTx})`,
-      ...info.lines
-    ].filter(Boolean).join('\n');
-    feed(dev, raw, now);
-  }
-  if (CAP.bt) {
-    try { navigator.bluetooth.addEventListener('advertisementreceived', onAdv); } catch (e) {}
-    try {
-      navigator.bluetooth.getAvailability && navigator.bluetooth.getAvailability().then(a => { btAvailable = a; renderHelp(); }).catch(() => {});
-      navigator.bluetooth.addEventListener && navigator.bluetooth.addEventListener('availabilitychanged', e => { btAvailable = !!e.value; renderHelp(); });
-    } catch (e) {}
-  }
-
-  // ---------- mode switching ----------
-  function setBadge() {
-    const b = $('mode-badge');
-    b.textContent = realRadio ? 'LIVE' : 'PRACTICE';
-    b.className = 'badge ' + (realRadio ? 'live' : 'practice');
-    $('btn-practice').classList.toggle('hidden', !realRadio);
-    $('btn-scan').classList.toggle('live', realRadio && scanning);
-    $('btn-stop').classList.toggle('opacity-50', !scanning);
-    $('help-mode-note').textContent = $('footnote').textContent = realRadio
-      ? 'LIVE: real Bluetooth signals. Distance is a rough guess from signal strength (walls, bodies and pockets change it a lot). Direction is unknown until you turn slowly in a full circle with COMPASS on — hollow dots = direction not known yet. Feet shown.'
-      : 'PRACTICE: these are made-up devices so you can learn the app. Distance is a rough guess from how strong the Bluetooth signal is. Direction is estimated (real phones can\'t tell exact angle without special antennas). Feet shown.';
-  }
-  function beginLive(kind) {
-    if (!realRadio) {
-      devices.clear();
-      selectedId = null;
-      if (viewMode === 'walk') toggleWalk();
-    }
-    realRadio = true; liveKind = kind; scanning = true;
-    requestWakeLock();
-    resumePicked();
-    setStatus(kind === 'scan' ? '● LIVE · listening for nearby Bluetooth' : '● LIVE · tracking the device(s) you picked', 'live');
-    if (kind === 'pick' && !CAP.scan) {
-      showHint(CAP.bluefy
-        ? 'Live in Bluefy: you pick devices one at a time (Bluefy can\'t list everything around you). If a device can\'t give a signal reading, NEXUS measures how easily it connects instead — shown as “link %”, not dBm. Works best with earbuds, tags, bands and sensors; other phones usually refuse.'
-        : 'Live, one device at a time. To see everything nearby, turn on chrome://flags/#enable-experimental-web-platform-features and relaunch.',
-        ['pick', 'compass', 'help']);
-    } else if (CAP.orientation && heading == null) {
-      showHint('Tip: tap COMPASS, hold your phone flat at your chest and turn slowly in a full circle. The direction where a device is strongest is (roughly) where it is.', ['compass']);
-    } else hideHint();
-    setBadge();
-  }
-  function enterPractice(reason, actions) {
-    stopRadio();
-    if (realRadio || devices.size === 0) { devices.clear(); selectedId = null; seedSim(); }
-    realRadio = false; liveKind = null; scanning = true;
-    if (viewMode === 'walk') toggleWalk();
-    setStatus(reason ? '● Practice Mode · no real radio here' : '● Practice Mode · looking for signals', 'sim');
-    if (reason) showHint(reason, actions || ['help']); else hideHint();
-    setBadge();
-  }
-  function noLiveReason() {
-    if (!CAP.bt) {
-      if (CAP.iOS) return ['This iPhone browser can\'t use Bluetooth — Safari, and Chrome/Edge/Firefox on iPhone too (Apple makes them all run Safari\'s engine). To go live on your iPhone, open this page in the free Bluefy – Web BLE Browser app.', ['bluefy', 'copy', 'help']];
-      if (CAP.firefox) return ['Firefox doesn\'t support Web Bluetooth. Open this page in Chrome or Edge to go live.', ['copy', 'help']];
-      if (CAP.chromium) return ['Bluetooth is switched off for web pages in this browser. In Chrome/Edge, turn on chrome://flags/#enable-experimental-web-platform-features (Brave: brave://flags/#brave-web-bluetooth-api) and relaunch.', ['copy', 'help']];
-      return ['This browser has no Web Bluetooth. Use Chrome or Edge (Android, Windows, Mac), or Bluefy on iPhone.', ['copy', 'help']];
-    }
-    if (!CAP.secure) return ['Bluetooth only works on a secure (https://) page. Open https://antmanthepro.github.io/nexus-ble-radar/ instead.', ['copy', 'help']];
-    return null;
-  }
-
-  async function startScan() {
-    if (scanning && realRadio) return;
-    const why = noLiveReason();
-    if (why) { enterPractice(why[0], why[1]); return; }
-    if (btAvailable === false) {
-      enterPractice('Bluetooth looks turned off (or this device has none). Turn Bluetooth on, then tap START LOOKING again.' + (CAP.android ? ' On Android also turn on Location.' : ''), ['help']);
-      return;
-    }
-    if (CAP.scan) {
-      try {
-        setStatus('● Asking for permission to look…', 'wait');
-        bleScan = await navigator.bluetooth.requestLEScan({ acceptAllAdvertisements: true, keepRepeatedDevices: true });
-        beginLive('scan');
-        return;
-      } catch (e) {
-        if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
-          enterPractice('Permission not given, so no real radio. Tap START LOOKING again and choose Allow.' + (CAP.android ? ' On Android, Chrome also needs Location + “Nearby devices” permission.' : ''), CAP.pick ? ['pick', 'help'] : ['help']);
-          return;
-        }
-        // scan exists but failed (flag half-on, adapter busy) → try picking one device
-      }
-    }
-    if (CAP.pick) { await pickDevice(true); return; }
-    enterPractice('This browser has Bluetooth but can\'t look for devices.', ['help']);
-  }
-
-  async function pickDevice(fromStart) {
-    if (!CAP.pick) return;
-    let bt;
-    try {
-      setStatus('● Pick a device from the list…', 'wait');
-      bt = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service', 'device_information'] });
-    } catch (e) {
-      const msg = e && e.name === 'NotFoundError' ? 'No device picked (or none found).'
-        : e && e.name === 'SecurityError' ? 'The browser blocked the picker — tap + TRACK A DEVICE.'
-        : 'Couldn\'t open the device picker: ' + (e && e.message || e);
-      if (realRadio) { setStatus('● LIVE · ' + msg, 'live'); return; }
-      enterPractice(msg + ' Tap + TRACK A DEVICE to try again.', ['pick', 'help']);
-      return;
-    }
-    if (!realRadio || !scanning) beginLive(bleScan ? 'scan' : 'pick');
-    const id = bt.id;
-    let dev = devices.get(id);
-    if (!dev) {
-      dev = makeDevice(id, bt.name || 'Unnamed device', guessFromName(bt.name || '') || 'UNKNOWN', String(id).slice(0, 12) + '…', -80, hashAngle(id));
-      dev.dirKnown = false; dev.lastSeen = Date.now(); dev.picked = true;
-      devices.set(id, dev);
-    }
-    dev.bt = bt; dev.picked = true;
-    selectedId = id;
-    // Path 1: real signal strength for this device
-    if (typeof bt.watchAdvertisements === 'function') {
-      try {
-        dev.abort = typeof AbortController === 'function' ? new AbortController() : null;
-        bt.addEventListener('advertisementreceived', onAdv);
-        await bt.watchAdvertisements(dev.abort ? { signal: dev.abort.signal } : undefined);
-        dev.tech = 'LIVE · watching this device\'s broadcasts (real dBm)';
-        setStatus('● LIVE · tracking ' + dev.name, 'live');
-        return;
-      } catch (e) { /* fall through to link check */ }
-    }
-    // Path 2 (Bluefy / no RSSI): link-quality probing
-    dev.unit = 'link'; dev.succEma = 1; dev.linkScore = 0;
-    dev.tech = 'LIVE · link check: NEXUS connects and disconnects to measure how easy the link is. Score is 0–100 %, not dBm.';
-    setStatus('● LIVE · link-checking ' + dev.name, 'live');
-    linkLoop(dev);
-  }
-
-  async function linkLoop(dev) {
-    if (dev.linking) return;
-    dev.linking = true;
-    while (realRadio && scanning && devices.get(dev.id) === dev && dev.bt && dev.bt.gatt) {
-      const t0 = performance.now();
-      let ok = false;
-      try {
-        await Promise.race([dev.bt.gatt.connect(), sleep(5000).then(() => { throw new Error('timeout'); })]);
-        ok = true;
-      } catch (e) {}
-      const lat = performance.now() - t0;
-      try { dev.bt.gatt.disconnect(); } catch (e) {}
-      dev.succEma = 0.6 * dev.succEma + 0.4 * (ok ? 1 : 0);          // how often the link works
-      if (ok) { const ls = clamp(100 - (lat - 150) / 40, 5, 100);       // how fast it connects (150 ms → 100)
-        dev.latEma = dev.latEma == null ? ls : dev.latEma * 0.6 + ls * 0.4; }
-      dev.linkScore = dev.succEma * (dev.latEma ?? 0);
-      if (ok || dev.count > 0) {
-        feed(dev, -100 + dev.linkScore * 0.7, Date.now()); // 0–100 % mapped onto -100…-30 for the sparkline
-        dev.distanceM = Math.max(0.3, Math.pow(30, 1 - dev.linkScore / 100)); // very rough: 100 % ≈ touching, 0 % ≈ 100 ft+
-      }
-      dev.lastLatency = Math.round(lat);
-      await sleep(900);
-    }
-    dev.linking = false;
-  }
-
-  function resumePicked() { // after STOP → START, pick up previously picked devices again
-    devices.forEach(d => {
-      if (!d.bt) return;
-      if (d.unit === 'link') { setTimeout(() => linkLoop(d), 0); return; }
-      if (typeof d.bt.watchAdvertisements === 'function' && (!d.bt.watchingAdvertisements)) {
-        try { d.abort = typeof AbortController === 'function' ? new AbortController() : null;
-          d.bt.watchAdvertisements(d.abort ? { signal: d.abort.signal } : undefined).catch(() => {}); } catch (e) {}
-      }
-    });
-  }
-  function stopRadio() {
-    try { if (bleScan && bleScan.active) bleScan.stop(); } catch (e) {}
-    bleScan = null;
-    devices.forEach(d => { try { d.abort && d.abort.abort(); } catch (e) {} try { d.bt && d.bt.gatt && d.bt.gatt.connected && d.bt.gatt.disconnect(); } catch (e) {} });
-    releaseWakeLock();
-  }
-  function stopScan() {
-    stopRadio();
-    scanning = false;
-    setStatus(realRadio ? '● LIVE stopped · last readings kept' : '● Stopped', 'sim');
-    setBadge();
-  }
-
-  // ---------- compass ----------
-  function onOrient(e) {
-    let h = null;
-    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;
-    else if (e.absolute && typeof e.alpha === 'number') h = 360 - e.alpha;
-    if (h == null) return;
-    const so = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
-    heading = ((h + so) % 360 + 360) % 360;
-  }
-  let compassOn = false;
-  async function enableCompass() {
-    if (!CAP.orientation) { setStatus('● No compass on this device', realRadio ? 'live' : 'sim'); return; }
-    try {
-      if (CAP.orientationNeedsPermission) {
-        const r = await DeviceOrientationEvent.requestPermission();
-        if (r !== 'granted') { setStatus('● Compass permission not given', realRadio ? 'live' : 'sim'); return; }
-      }
-      if (!compassOn) {
-        window.addEventListener('deviceorientationabsolute', onOrient);
-        window.addEventListener('deviceorientation', onOrient);
-        compassOn = true; if (realRadio) hideHint();
-      }
-      $('btn-compass').classList.add('active');
-      setTimeout(() => { if (heading == null) setStatus('● Compass on, but no heading yet — move the phone in a figure 8', realRadio ? 'live' : 'sim'); }, 2500);
-    } catch (e) { setStatus('● Compass not available here', realRadio ? 'live' : 'sim'); }
-  }
-
-  // ---------- wake lock ----------
-  async function requestWakeLock() {
-    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
-  }
-  function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; }
-  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && realRadio && scanning) requestWakeLock(); });
-
-  // ---------- status / hint / help ----------
-  function setStatus(text, kind) {
-    const el = $('status-line');
-    el.textContent = text;
-    const color = kind === 'live' ? '#00ff87' : kind === 'wait' ? '#60efff' : '#ffcc00';
-    el.className = 'glow font-bold';
-    el.style.color = color;
-  }
-  const HINT_BTNS = {
-    bluefy: ['GET BLUEFY (APP STORE)', () => window.open('https://apps.apple.com/app/id1492822055', '_blank', 'noopener')],
-    copy: ['COPY LINK', async () => {
-      const url = 'https://antmanthepro.github.io/nexus-ble-radar/';
-      try { await navigator.clipboard.writeText(url); setStatus('● Link copied — paste it into Bluefy / Chrome', 'wait'); }
-      catch (e) { prompt('Copy this link:', url); }
-    }],
-    pick: ['+ TRACK A DEVICE', () => pickDevice(false)],
-    compass: ['COMPASS', () => enableCompass()],
-    help: ['HOW TO GO LIVE', () => openHelp()]
-  };
-  function showHint(text, actions) {
-    $('hint-text').textContent = text;
-    const box = $('hint-actions');
-    box.innerHTML = '';
-    (actions || []).filter(a => HINT_BTNS[a]).filter(a => a !== 'pick' || CAP.pick).filter(a => a !== 'compass' || CAP.orientation).forEach(a => {
-      const b = document.createElement('button');
-      b.className = 'mode-btn px-2 py-1 text-[10px] rounded';
-      b.textContent = HINT_BTNS[a][0];
-      b.onclick = () => { if (a === 'compass' || a === 'help') hideHint(); HINT_BTNS[a][1](); };
-      box.appendChild(b);
-    });
-    const x = document.createElement('button');
-    x.className = 'mode-btn px-2 py-1 text-[10px] rounded text-gray-500';
-    x.textContent = 'HIDE';
-    x.onclick = hideHint;
-    box.appendChild(x);
-    $('live-hint').classList.remove('hidden');
-  }
-  function hideHint() { $('live-hint').classList.add('hidden'); }
-  function renderHelp() {
-    const yes = '<span class="text-[#00ff87]">YES</span>', no = '<span class="text-[#ff0080]">NO</span>', maybe = '<span class="text-[#ffcc00]">?</span>';
-    const rows = [
-      ['Web Bluetooth', CAP.bt ? yes : no, CAP.bt ? (CAP.bluefy ? 'Bluefy (or another iOS BLE browser)' : 'available') : (CAP.iOS ? 'iPhone browsers don\'t have it — use Bluefy' : 'use Chrome/Edge')],
-      ['Secure page (https)', CAP.secure ? yes : no, CAP.secure ? '' : 'Bluetooth needs https://'],
-      ['Bluetooth radio on', btAvailable === true ? yes : btAvailable === false ? no : maybe, btAvailable == null ? 'not reported' : ''],
-      ['See everything nearby', CAP.scan ? yes : no, CAP.scan ? 'requestLEScan' : (CAP.bt && CAP.chromium ? 'needs the experimental flag' : 'not in this browser')],
-      ['Pick one device', CAP.pick ? yes : no, CAP.pick ? 'requestDevice' : ''],
-      ['Live dBm for picked device', CAP.watch ? yes : (CAP.pick ? maybe : no), CAP.watch ? 'watchAdvertisements' : (CAP.pick ? 'checked after you pick — falls back to link %' : '')],
-      ['Compass', CAP.orientation ? (heading != null ? yes : maybe) : no, CAP.orientation ? (heading != null ? Math.round(heading) + '°' : 'tap COMPASS') : ''],
-    ];
-    $('cap-table').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="text-gray-400">${esc(r[2])}</td></tr>`).join('');
-    const v = noLiveReason();
-    $('help-verdict').textContent = realRadio ? 'You are LIVE right now — dots are real devices.'
-      : v ? 'Live Mode isn\'t possible in this browser: ' + v[0]
-      : CAP.scan ? 'This browser can go LIVE and see everything nearby — tap START LOOKING.'
-      : CAP.pick ? 'This browser can go LIVE one device at a time — tap START LOOKING or + TRACK A DEVICE.'
-      : 'Live Mode isn\'t available here.';
-  }
-  function openHelp() { renderHelp(); $('help').classList.remove('hidden'); }
-
-  // ---------- practice simulation ----------
-  function updateSim() {
-    if (!scanning || realRadio) return;
-    const now = Date.now();
-    devices.forEach(dev => {
-      const jitter = (Math.random() - 0.5) * (mode === 'street' ? 5 : 2.5);
-      dev.rawRssi = Math.max(-95, Math.min(-30, dev.rawRssi + jitter * 0.12));
-      dev.filteredRssi = dev.kf.filter(dev.rawRssi);
-      dev.angle += (Math.random() - 0.5) * 0.006;
-      dev.distanceM = estimateDistance(dev.filteredRssi, dev.txPower, pathLossN);
-      dev.history.push(dev.filteredRssi);
-      if (dev.history.length > 40) dev.history.shift();
-      dev.samples.push({ t: now, v: dev.filteredRssi });
-      while (dev.samples.length && now - dev.samples[0].t > 12000) dev.samples.shift();
-      const dn = Math.min(1, dev.distanceM / 30);
-      const p = polar(dev.angle, R * dn);
-      dev.trail.push({ x: p.x, y: p.y, t: now });
-      if (dev.trail.length > 12) dev.trail.shift();
-      dev.lastSeen = now;
-    });
-    if (Math.random() < 0.003 && devices.size < 10) addSimDevice(-55 - Math.random() * 30);
-    for (const [id, d] of devices) if (now - d.lastSeen > 16000) devices.delete(id);
-  }
-  function pruneLive() {
-    if (!realRadio) return;
-    const now = Date.now();
-    for (const [id, d] of devices) if (!d.picked && !d.favorite && id !== selectedId && now - d.lastSeen > 90000) devices.delete(id);
-  }
-  function trend(dev) {
-    const now = Date.now();
-    const a = dev.samples.filter(s => now - s.t <= 3000), b = dev.samples.filter(s => now - s.t > 3000 && now - s.t <= 6000);
-    if (a.length < 2 || b.length < 2) return 0;
-    const avg = arr => arr.reduce((x, s) => x + s.v, 0) / arr.length;
-    const d = avg(a) - avg(b);
-    return d > 1.5 ? 1 : d < -1.5 ? -1 : 0;
-  }
-
-  // ---------- drawing ----------
-  function drawRadar() {
-    const rect = canvas.getBoundingClientRect();
-    ctx.clearRect(0, 0, rect.width, rect.height);
-
-    ctx.strokeStyle = '#00ff8722';
-    ctx.lineWidth = 1;
-    ctx.font = '9px ui-monospace';
-    ctx.fillStyle = '#60efff66';
-    for (let i = 1; i <= 4; i++) {
-      const rr = R * i / 4;
-      ctx.beginPath(); ctx.arc(CX, CY, rr, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillText(Math.round((i / 4) * 100) + ' ft', CX + rr + 4, CY - 4); // 30 m ≈ 100 ft at the edge
-    }
-    ctx.beginPath();
-    ctx.moveTo(CX - R, CY); ctx.lineTo(CX + R, CY);
-    ctx.moveTo(CX, CY - R); ctx.lineTo(CX, CY + R);
-    ctx.strokeStyle = '#60efff18'; ctx.stroke();
-    ctx.fillStyle = '#60efff88';
-    ctx.font = '11px ui-monospace';
-    ctx.fillText('N', CX - 4, CY - R - 6);
-    ctx.fillText('S', CX - 4, CY + R + 14);
-    ctx.fillText('E', CX + R + 4, CY + 4);
-    ctx.fillText('W', CX - R - 16, CY + 4);
-
-    // which way you're facing (live compass)
-    if (heading != null) {
-      const a = heading * Math.PI / 180;
-      ctx.save(); ctx.translate(CX, CY); ctx.rotate(a);
-      ctx.fillStyle = '#ff008022';
-      ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, -Math.PI / 2 - 0.3, -Math.PI / 2 + 0.3); ctx.closePath(); ctx.fill();
-      ctx.restore();
-    }
-
-    const speed = mode === 'eco' ? 0.01 : mode === 'pro' ? 0.026 : 0.018;
-    if (scanning) sweep += speed;
-    ctx.save();
-    ctx.translate(CX, CY); ctx.rotate(sweep);
-    const g = ctx.createLinearGradient(0, 0, R, 0);
-    const sc = realRadio ? ['#00ff8700', '#00ff8755', '#00ff87aa'] : ['#00ff8700', '#00ff8744', '#60efff77'];
-    g.addColorStop(0, sc[0]); g.addColorStop(0.65, sc[1]); g.addColorStop(1, sc[2]);
-    ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, -0.22, 0.22); ctx.closePath(); ctx.fill();
-    ctx.restore();
-
-    if (Date.now() < pulseUntil) {
-      const t = (pulseUntil - Date.now()) / 700;
-      ctx.beginPath(); ctx.arc(CX, CY, R * (1 - t) * 0.55, 0, Math.PI * 2);
-      ctx.strokeStyle = `rgba(255,0,128,${t})`; ctx.lineWidth = 2; ctx.stroke();
-    }
-
-    const fadeAfter = realRadio ? 20 : 14;
-    devices.forEach(dev => {
-      if (favsOnly && !dev.favorite) return;
-      const age = (Date.now() - dev.lastSeen) / 1000;
-      if (age > fadeAfter && dev.id !== selectedId) return;
-      if (realRadio && dev.count === 0) return;
-      const dn = Math.min(1, dev.distanceM / 30);
-      const p = polar(dev.angle, R * dn);
-      const x = CX + p.x, y = CY + p.y;
-      const alpha = Math.max(0.2, 1 - age / (fadeAfter * 0.8));
-      const isSel = dev.id === selectedId;
-      const size = isSel ? 7 : (dev.favorite ? 5.5 : 4);
-      const col = dev.favorite ? '#ffcc00' : (isSel ? '#60efff' : '#00ff87');
-
-      if (showTrails && dev.trail.length > 1 && dev.dirKnown) {
-        ctx.beginPath();
-        ctx.strokeStyle = dev.favorite ? '#ffcc0066' : '#00ff8755';
-        ctx.lineWidth = 1.2;
-        dev.trail.forEach((p, i) => { const px = CX + p.x, py = CY + p.y; i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); });
-        ctx.stroke();
-      }
-      if (isSel && realRadio && !dev.dirKnown) { // direction unknown: show the whole distance ring
-        ctx.save(); ctx.setLineDash([4, 6]); ctx.strokeStyle = '#60efff55';
-        ctx.beginPath(); ctx.arc(CX, CY, R * dn, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
-      }
-
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.shadowBlur = isSel ? 16 : 9;
-      ctx.shadowColor = col;
-      if (dev.dirKnown) {
-        ctx.fillStyle = col;
-        ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
-        ctx.shadowBlur = 0; ctx.fillStyle = '#0a0a0f';
-        ctx.beginPath(); ctx.arc(x, y, size * 0.4, 0, Math.PI * 2); ctx.fill();
-      } else {
-        ctx.strokeStyle = col; ctx.lineWidth = 2;
-        ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.stroke();
-      }
-      ctx.restore();
-
-      if (isSel || dn < 0.32) {
-        ctx.fillStyle = '#e5e7ebcc';
-        ctx.font = '10px ui-monospace';
-        ctx.fillText(dev.name.split(' ')[0].slice(0, 16), x + 8, y - 5);
-      }
-    });
-
-    ctx.fillStyle = '#ff0080';
-    ctx.shadowBlur = 10; ctx.shadowColor = '#ff0080';
-    ctx.beginPath(); ctx.arc(CX, CY, 3.5, 0, Math.PI * 2); ctx.fill();
-    ctx.shadowBlur = 0;
-
-    if (realRadio && devices.size === 0) {
-      ctx.fillStyle = '#60efffaa'; ctx.font = '12px ui-monospace'; ctx.textAlign = 'center';
-      ctx.fillText(liveKind === 'pick' ? 'Tap + TRACK A DEVICE to pick one' : (scanning ? 'Listening… real devices appear here' : 'Stopped'), CX, CY + R * 0.5);
-      ctx.textAlign = 'start';
-    }
-  }
-
-  function drawWalk() {
-    const rect = canvas.getBoundingClientRect();
-    ctx.clearRect(0, 0, rect.width, rect.height);
-    const sel = selectedId ? devices.get(selectedId) : null;
-    if (!sel) {
-      ctx.fillStyle = '#60efff'; ctx.font = '14px ui-monospace'; ctx.textAlign = 'center';
-      ctx.fillText('Select a device first, then hit 3D Walk View', CX, CY);
-      ctx.textAlign = 'start';
-      return;
-    }
-    const horizon = CY * 0.45;
-    ctx.fillStyle = '#0a0a0f'; ctx.fillRect(0, 0, rect.width, rect.height);
-    const sky = ctx.createLinearGradient(0, 0, 0, horizon);
-    sky.addColorStop(0, '#001a22'); sky.addColorStop(1, '#0a0a0f');
-    ctx.fillStyle = sky; ctx.fillRect(0, 0, rect.width, horizon);
-    const ground = ctx.createLinearGradient(0, horizon, 0, rect.height);
-    ground.addColorStop(0, '#0f1a12'); ground.addColorStop(1, '#050805');
-    ctx.fillStyle = ground; ctx.fillRect(0, horizon, rect.width, rect.height - horizon);
-    ctx.strokeStyle = '#00ff8733'; ctx.lineWidth = 1;
-    for (let i = 0; i < 12; i++) {
-      const y = horizon + (i * i) * 1.8;
-      if (y > rect.height) break;
-      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke();
-    }
-
-    const feet = toFeet(sel.distanceM);
-    let remaining, progress, xOff, dirText;
-    if (realRadio) {
-      remaining = feet;
-      progress = 1 - Math.min(1, sel.distanceM / 30);
-      if (sel.dirKnown && heading != null) {
-        let rel = ((sel.angle * 180 / Math.PI - heading + 540) % 360) - 180; // -180..180, 0 = straight ahead
-        xOff = clamp(rel / 90, -1, 1);
-        dirText = Math.abs(rel) < 20 ? 'Straight ahead' : (rel > 0 ? `Turn right ~${Math.round(rel)}°` : `Turn left ~${Math.round(-rel)}°`);
-      } else { xOff = 0; dirText = sel.dirKnown ? 'Toward ' + angleToDir(sel.angle) : 'Direction unknown — turn slowly in a circle'; }
-    } else {
-      remaining = Math.max(0, feet - walkDist);
-      progress = Math.min(1, walkDist / Math.max(1, feet));
-      xOff = Math.sin(sel.angle) * (1 - progress);
-      dirText = 'Heading toward: ' + angleToDir(sel.angle);
-      if (walkDist < feet) walkDist += 0.4; // auto-advance for demo feel
-    }
-    const beaconX = CX + xOff * (rect.width * 0.25);
-    const beaconY = horizon + (rect.height - horizon) * 0.35 * (1 - progress * 0.6);
-    const size = 8 + progress * 40;
-    ctx.save();
-    ctx.shadowBlur = 30; ctx.shadowColor = '#00ff87'; ctx.fillStyle = '#00ff87';
-    ctx.beginPath(); ctx.arc(beaconX, beaconY, size, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#60efff'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.moveTo(beaconX, beaconY); ctx.lineTo(beaconX, beaconY - 40 - progress * 30); ctx.stroke();
-    ctx.restore();
-
-    ctx.fillStyle = '#00ff87'; ctx.font = '13px ui-monospace';
-    ctx.fillText(sel.name.slice(0, 32), 20, 40);
-    ctx.fillStyle = '#60efff'; ctx.font = '12px ui-monospace';
-    ctx.fillText((realRadio ? 'About ' + Math.round(remaining) + ' feet away' : 'About ' + Math.round(remaining) + ' feet left'), 20, 60);
-    ctx.fillText(dirText, 20, 78);
-    if (realRadio) {
-      const tr = trend(sel);
-      ctx.font = 'bold 18px ui-monospace';
-      ctx.fillStyle = tr > 0 ? '#00ff87' : tr < 0 ? '#ff0080' : '#9ca3af';
-      ctx.fillText(tr > 0 ? 'WARMER ▲' : tr < 0 ? 'COLDER ▼' : 'STEADY ●', 20, 106);
-      const age = (Date.now() - sel.lastSeen) / 1000;
-      ctx.font = '11px ui-monospace'; ctx.fillStyle = '#9ca3af';
-      ctx.fillText(age > 5 ? `No signal for ${Math.round(age)}s` : 'Signal fresh', 20, 124);
-      ctx.fillStyle = '#ffcc00'; ctx.font = '12px ui-monospace';
-      ctx.fillText('Walk for real · stop every few steps · Esc to exit', 20, rect.height - 30);
-    } else {
-      ctx.fillStyle = '#ffcc00';
-      ctx.fillText('WASD or arrows to walk · Esc to exit', 20, rect.height - 30);
-    }
-  }
-
-  function draw() {
-    if (viewMode === 'walk') drawWalk(); else drawRadar();
-    updateSim();
-    pruneLive();
-    updateUI();
-    requestAnimationFrame(draw);
-  }
-
-  function readingText(d) { return d.unit === 'link' ? Math.round(d.linkScore || 0) + '%' : Math.round(d.filteredRssi); }
-  function updateUI(force) {
-    $('mode-line').textContent = `VIEW: ${viewMode.toUpperCase()}`;
-    const now = Date.now();
-    const fresh = Array.from(devices.values()).filter(d => !realRadio || (d.count > 0 && now - d.lastSeen < 15000));
-    $('target-count').textContent = `DEVICES NEARBY: ${fresh.length}`;
-    const sel = selectedId ? devices.get(selectedId) : null;
-    $('heading').textContent = heading != null ? `${Math.round(heading)}° ${degToDir(heading)}` : (sel && !realRadio ? angleToDir(sel.angle) : '—');
-    $('target-dir').textContent = sel ? 'TARGET: ' + (sel.dirKnown ? angleToDir(sel.angle) : 'direction unknown') : '';
-
-    if (force || now - lastListRender > 300) {
-      lastListRender = now;
-      const list = $('target-list');
-      const arr = Array.from(devices.values()).filter(d => (!favsOnly || d.favorite) && (!realRadio || d.count > 0 || d.picked)).sort((a, b) => a.distanceM - b.distanceM);
-      list.innerHTML = arr.length ? arr.map(d => {
-        const age = Math.round((now - d.lastSeen) / 1000);
-        const seen = realRadio ? (d.count === 0 ? ' · waiting…' : age > 3 ? ` · ${age}s ago` : ' · now') : '';
-        const label = d.vendor && /^Unknown/.test(d.name) ? d.vendor + ' device' : d.name;
-        return `
-      <div class="target-row ${d.id === selectedId ? 'selected' : ''} ${d.favorite ? 'fav' : ''} p-2 rounded cursor-pointer hover:bg-white/5" data-id="${esc(d.id)}">
-        <div class="flex justify-between">
-          <div class="min-w-0">
-            <div class="text-sm truncate ${d.favorite ? 'text-[#ffcc00]' : 'text-gray-200'}">${esc(label)}</div>
-            <div class="text-[10px] text-gray-500">${esc(d.type)} · about ${Math.round(toFeet(d.distanceM))} ft${esc(seen)}</div>
-          </div>
-          <div class="text-right">
-            <div class="text-[#ff0080] font-mono text-xs">${esc(readingText(d))}</div>
-            <div class="text-[10px] text-gray-600">${d.favorite ? '★' : '☆'}</div>
-          </div>
-        </div>
-      </div>`; }).join('')
-        : `<div class="text-center text-xs text-gray-500 py-8">${realRadio ? (scanning ? (liveKind === 'pick' ? 'Tap + TRACK A DEVICE to pick a real device' : 'Listening for real devices… (can take a few seconds)') : 'Live stopped') : 'Nothing nearby yet'}</div>`;
-    }
-
-    const det = $('detail');
-    if (sel) {
-      det.classList.remove('hidden');
-      $('d-name').textContent = sel.name;
-      $('d-type').textContent = 'Type: ' + sel.type + (sel.vendor ? ' · ' + sel.vendor : '');
-      $('d-mac').textContent = sel.mac + (realRadio ? ' (browser ID, not MAC)' : '');
-      $('d-dist').textContent = 'About ' + Math.round(toFeet(sel.distanceM)) + ' feet away';
-      $('d-rssi').textContent = sel.unit === 'link' ? Math.round(sel.linkScore || 0) + '% link (not dBm)' : Math.round(sel.filteredRssi) + ' dBm (smoothed)';
-      $('d-raw').textContent = sel.unit === 'link' ? (sel.lastLatency ? sel.lastLatency + ' ms connect' : '—') : Math.round(sel.rawRssi) + ' dBm';
-      $('d-hex').textContent = sel.tech || sel.hex;
-      $('d-fav').textContent = sel.favorite ? '★' : '☆';
-      $('d-dir').textContent = sel.dirKnown
-        ? angleToDir(sel.angle) + (realRadio ? ' (from your turn-in-a-circle)' : ' (estimated direction)')
-        : (heading == null ? 'Unknown — tap COMPASS, then turn slowly in a full circle' : `Unknown — keep turning slowly (${bearingProgress(sel)}/24 directions sampled)`);
-      sctx.clearRect(0, 0, 320, 40);
-      if (sel.history.length > 1) {
-        sctx.strokeStyle = '#60efff'; sctx.lineWidth = 1.4;
-        sctx.beginPath();
-        const min = Math.min(...sel.history) - 2, max = Math.max(...sel.history) + 2;
-        sel.history.forEach((v, i) => {
-          const x = (i / (sel.history.length - 1)) * 320;
-          const y = 38 - ((v - min) / (max - min)) * 36;
-          i === 0 ? sctx.moveTo(x, y) : sctx.lineTo(x, y);
-        });
-        sctx.stroke();
-      }
-    } else det.classList.add('hidden');
-  }
-
-  function toggleWalk() {
-    viewMode = viewMode === 'walk' ? 'radar' : 'walk';
-    $('btn-3d').classList.toggle('active', viewMode === 'walk');
-    $('btn-3d').textContent = viewMode === 'walk' ? 'BACK TO RADAR' : '3D WALK VIEW';
-    walkDist = 0;
-  }
-
-  // ---------- wiring ----------
-  $('btn-scan').onclick = startScan;
-  $('btn-stop').onclick = stopScan;
-  $('btn-pulse').onclick = () => pulseUntil = Date.now() + 700;
-  $('btn-favs').onclick = () => { favsOnly = !favsOnly; $('btn-favs').classList.toggle('active', favsOnly); updateUI(true); };
-  $('btn-trails').onclick = () => { showTrails = !showTrails; $('btn-trails').classList.toggle('active', showTrails); };
-  $('btn-3d').onclick = () => {
-    if (!selectedId && viewMode !== 'walk') { setStatus('● Pick a device first for Walk View', realRadio ? 'live' : 'sim'); return; }
-    toggleWalk();
-  };
-  $('btn-pick').onclick = () => pickDevice(false);
-  $('btn-compass').onclick = enableCompass;
-  $('btn-practice').onclick = () => enterPractice(null);
-  $('btn-help').onclick = openHelp;
-  $('mode-badge').onclick = openHelp;
-  $('help-close').onclick = () => $('help').classList.add('hidden');
-  $('help').onclick = e => { if (e.target.id === 'help') $('help').classList.add('hidden'); };
-  if (CAP.pick) $('btn-pick').classList.remove('hidden');
-  if (CAP.orientation) $('btn-compass').classList.remove('hidden');
-  if (CAP.orientation && !CAP.orientationNeedsPermission && (CAP.android || navigator.maxTouchPoints > 0)) enableCompass(); // Android: no prompt needed
-
-  document.querySelectorAll('[data-mode]').forEach(btn => {
-    btn.onclick = () => {
-      mode = btn.dataset.mode;
-      document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      $('pro-tools').classList.toggle('hidden', mode !== 'pro');
-      if (mode === 'street') pathLossN = 2.0;
-      else if (mode === 'precision') pathLossN = 2.5;
-      else if (mode === 'eco') pathLossN = 2.2;
-      $('n-slider').value = pathLossN;
-      $('n-val').textContent = pathLossN.toFixed(1);
-    };
+/* ---------- Decode an advertisement into brand / type / name guess ---------- */
+function decodeAdv(a) {
+  const out = { brand:null, kind:'UNKNOWN', product:null, conf:0, notes:[], trackerState:null, companyIds:[] };
+  const set = (brand, kind, product, conf, note) => { if (conf > out.conf) { out.brand = brand || out.brand; out.kind = kind; out.product = product; out.conf = conf; } else if (!out.brand && brand) out.brand = brand; if (note) out.notes.push(note); };
+  (a.mfg || []).forEach(({id, data}) => {
+    out.companyIds.push(id);
+    const b = bytes(data); const co = COMPANY[id];
+    if (id === 0x004C) {
+      const t = b[0], len = b[1];
+      if (t === 0x12 && len === 0x19) { set('Apple','TRACKER','Find My tag (separated from owner)',0.9,'Apple Find My payload, full key = separated mode (AirTag-class or lost Apple device)'); out.trackerState='separated'; }
+      else if (t === 0x12) { set('Apple','TRACKER','Find My tag (near its owner)',0.75,'Apple Find My short payload = near owner'); out.trackerState='near-owner'; }
+      else if (t === 0x07) set('Apple','AUDIO','AirPods / Beats',0.8,'Apple proximity pairing');
+      else if (t === 0x10) set('Apple','PHONE','iPhone / iPad / Mac',0.6,'Apple Nearby Info');
+      else if (t === 0x02 && len === 0x15) set('Apple','BEACON','iBeacon',0.7,'iBeacon frame');
+      else if (t === 0x09 || t === 0x0A) set('Apple','MEDIA','AirPlay device',0.6,'AirPlay');
+      else set('Apple','APPLE',APPLE_TYPES[t] || 'Apple device',0.4, APPLE_TYPES[t] ? 'Apple type '+APPLE_TYPES[t] : null);
+    } else if (id === 0x0006) {
+      if (b[0] === 0x03) set('Microsoft','ACCESSORY','Swift Pair accessory',0.6,'Microsoft Swift Pair');
+      else if (b[0] === 0x01) set('Microsoft','COMPUTER','Windows device',0.55,'Microsoft CDP beacon');
+      else set('Microsoft','UNKNOWN','Microsoft device',0.3);
+    } else if (id === 0x067C) set('Tile','TRACKER','Tile tracker',0.85);
+    else if (id === 0x08C3) set('Chipolo','TRACKER','Chipolo tracker',0.85);
+    else if (id === 0x0075) set('Samsung','SAMSUNG','Galaxy device',0.35);
+    else if (id === 0x0087) set('Garmin','WEARABLE','Garmin device',0.5);
+    else if (id === 0x0059 || id === 0x02E5 || id === 0x02FF || id === 0x000D) set(co,'SENSOR','Dev board / sensor ('+co+')',0.3);
+    else if (id === 0x0157 || id === 0x02B2 || id === 0x0304 || id === 0x006B || id === 0x00D1) set(co,'WEARABLE',co+' wearable',0.5);
+    else if (id === 0x009E || id === 0x00CC || id === 0x0494 || id === 0x07C9 || id === 0x0103 || id === 0x0057 || id === 0x075A) set(co,'AUDIO',co+' audio',0.5);
+    else if (co) set(co,'UNKNOWN',co+' device',0.25);
+    else out.notes.push('Unlisted company ID '+h4(id));
   });
-  $('n-slider').oninput = e => { pathLossN = +e.target.value; $('n-val').textContent = pathLossN.toFixed(1); };
-  $('tx-slider').oninput = e => { defaultTx = +e.target.value; $('tx-val').textContent = defaultTx; };
-  $('q-slider').oninput = e => { kalmanQ = +e.target.value; $('q-val').textContent = kalmanQ.toFixed(1); devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ)); };
-
-  $('btn-export').onclick = () => {
-    const state = {
-      app: 'NEXUS BLE Radar ' + NEXUS_VERSION, savedAt: new Date().toISOString(),
-      live: realRadio, liveKind, mode, pathLossN, defaultTx, kalmanQ,
-      devices: Array.from(devices.values()).map(d => ({
-        name: d.name, type: d.type, id: d.mac, maker: d.vendor || undefined, looksLike: d.tags.length ? d.tags : undefined,
-        strength: d.unit === 'link' ? Math.round(d.linkScore || 0) + '% link' : Math.round(d.filteredRssi),
-        aboutFeet: Math.round(toFeet(d.distanceM)),
-        direction: d.dirKnown ? angleToDir(d.angle) : 'unknown',
-        lastSeen: new Date(d.lastSeen).toISOString(),
-        saved: d.favorite
-      }))
-    };
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'}));
-    a.download = realRadio ? 'nearby-devices-live.json' : 'nearby-devices-practice.json';
-    a.click();
-  };
-
-  $('target-list').onclick = e => {
-    const row = e.target.closest('[data-id]');
-    if (row) { selectedId = row.dataset.id; updateUI(true); }
-  };
-  $('d-fav').onclick = () => {
-    const sel = devices.get(selectedId);
-    if (!sel) return;
-    sel.favorite = !sel.favorite;
-    sel.favorite ? favIds.add(sel.id) : favIds.delete(sel.id);
-    saveFavs(); updateUI(true);
-  };
-
-  document.addEventListener('keydown', e => {
-    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
-    if (e.key === ' ') { e.preventDefault(); scanning ? stopScan() : startScan(); }
-    if (e.key === 'f' || e.key === 'F') $('btn-favs').click();
-    if (e.key === 't' || e.key === 'T') $('btn-trails').click();
-    if (e.key === '3' || e.key === 'v' || e.key === 'V') $('btn-3d').click();
-    if (e.key === 'l' || e.key === 'L') openHelp();
-    if (e.key === 'Escape') {
-      if (!$('help').classList.contains('hidden')) $('help').classList.add('hidden');
-      else if (viewMode === 'walk') $('btn-3d').click();
-      else selectedId = null;
-    }
-    if (viewMode === 'walk' && !realRadio) {
-      const step = 2.5; // feet
-      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') walkDist += step;
-      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') walkDist = Math.max(0, walkDist - step);
-    }
+  const svcs = new Set([...(a.uuids||[]), ...(a.svcData||[]).map(s=>s.uuid)].map(short).filter(x=>x!=null));
+  (a.svcData||[]).forEach(({uuid, data}) => {
+    const s = short(uuid), b = bytes(data);
+    if (s === 0xFEAA) { if (b[0] === 0x40 || b[0] === 0x41) { set('Google','TRACKER','Find Hub tag (Google network)',0.8,'Eddystone FMDN frame'); out.trackerState = out.trackerState || 'separated'; } else set('Google','BEACON','Eddystone beacon',0.65); }
   });
+  if (svcs.has(0xFCB2)) { set(out.brand,'TRACKER','Tracker (DULT unwanted-tracking beacon)',0.85,'Advertises the cross-vendor unwanted-tracking service'); out.trackerState = out.trackerState || 'separated'; }
+  if (svcs.has(0xFEED) || svcs.has(0xFEEC) || svcs.has(0xFD84)) set('Tile','TRACKER','Tile tracker',0.85);
+  if (svcs.has(0xFE33) || svcs.has(0xFE65)) set('Chipolo','TRACKER','Chipolo tracker',0.85);
+  if (svcs.has(0xFD5A)) set('Samsung','TRACKER','Galaxy SmartTag',0.8);
+  if (svcs.has(0xFD44)) set('Apple','TRACKER','Find My network accessory',0.6);
+  if (svcs.has(0xFE2C)) set('Google','AUDIO','Fast Pair accessory',0.55,'Google Fast Pair');
+  if (svcs.has(0xFD6F)) set(out.brand,'PHONE','Phone (Exposure Notification)',0.5);
+  if (svcs.has(0xFE95)) set('Xiaomi','SENSOR','Xiaomi sensor (MiBeacon)',0.6);
+  if (svcs.has(0x180D)) set(out.brand,'WEARABLE','Heart-rate sensor',0.55);
+  if (svcs.has(0x1812)) set(out.brand,'ACCESSORY','Keyboard / mouse (HID)',0.55);
+  if (svcs.has(0x1826) || svcs.has(0x1816) || svcs.has(0x1818)) set(out.brand,'FITNESS','Fitness equipment',0.55);
+  if (svcs.has(0x181A)) set(out.brand,'SENSOR','Environmental sensor',0.5);
+  // advertised-name hints (lower priority than payload decode)
+  const n = (a.name||'').toLowerCase();
+  if (n) {
+    const rules = [[/airtag/,'Apple','TRACKER','AirTag'],[/\btile\b/,'Tile','TRACKER','Tile tracker'],[/chipolo/,'Chipolo','TRACKER','Chipolo tracker'],[/smart ?tag/,'Samsung','TRACKER','Galaxy SmartTag'],
+      [/airpods|buds|\bwh-|\bwf-|bose|jbl|beats|headphone|earbud|speaker|soundcore|sennheiser/,null,'AUDIO',null],[/watch|band|fitbit|garmin|whoop|oura|amazfit|forerunner|fenix/,null,'WEARABLE',null],
+      [/iphone|pixel|galaxy s|galaxy z|oneplus|phone/,null,'PHONE',null],[/\btv\b|bravia|roku|fire ?tv|chromecast/,null,'MEDIA',null],[/keyboard|mouse|mx /,null,'ACCESSORY',null]];
+    for (const [re, br, kind, prod] of rules) if (re.test(n)) { set(br || out.brand, kind, prod || a.name, kind === 'TRACKER' ? 0.7 : 0.45); break; }
+  }
+  return out;
+}
 
-  // ---------- boot (always starts in honest Practice Mode) ----------
-  seedSim();
-  scanning = true;
-  setBadge();
-  draw();
-  const why = noLiveReason();
-  if (why) {
-    setStatus('● Practice Mode · no real radio here', 'sim');
-    showHint(why[0], why[1]);
+const KIND_LABEL = {TRACKER:'Item tracker',AUDIO:'Audio',PHONE:'Phone / tablet',WEARABLE:'Wearable',SENSOR:'Sensor',BEACON:'Beacon',MEDIA:'TV / media',ACCESSORY:'Accessory',COMPUTER:'Computer',FITNESS:'Fitness gear',APPLE:'Apple device',SAMSUNG:'Samsung device',UNKNOWN:'Unidentified'};
+/* ---------- State ---------- */
+const devices = new Map();          // id -> device
+const groups = new Map();           // tracker group key -> presence aggregate
+let state = 'practice';             // 'practice' | 'live' | 'paused'
+let practiceReason = '';
+let bleScan = null, liveAdvCount = 0;
+let realRadio = false;              // true once LIVE was entered (stays true while PAUSED from live)
+let liveKind = null;                // 'scan' (everything nearby) | 'pick' (devices the user picked)
+let wakeLock = null, btAvailable = null;
+const seenEvents = new WeakSet();   // same advert can arrive via device + navigator listeners
+let profile = 'precise', pathN = 2.5, ref1m = -59, kalmanQ = 3;
+let filter = 'all', showTrails = true, viewMode = 'radar';
+let selectedId = null, pulseUntil = 0, followMin = 10;
+let heading = null, compassOn = false;
+let soundOn = false, vibeOn = false, audioCtx = null;
+let sweep = null; // {start, bins:[], simHeading}
+let sweepAngle = 0;
+const PROFILES = { eco:{N:2.2,Q:4.5,throttle:1000,label:'ECO'}, precise:{N:2.5,Q:3,throttle:0,label:'PRECISE'}, outdoor:{N:2.0,Q:3.5,throttle:0,label:'OUTDOOR'}, pro:{N:null,Q:null,throttle:0,label:'PRO'} };
+
+/* ---------- Session memory (localStorage) ---------- */
+const MEM_KEY = 'nexus-ble-v4-memory';
+let mem = {};
+try { mem = JSON.parse(localStorage.getItem(MEM_KEY) || '{}') || {}; } catch (e) { mem = {}; }
+try { JSON.parse(localStorage.getItem('nexus-ble-favs')||'[]').forEach(id => { (mem[id] = mem[id] || {}).favorite = true; }); } catch (e) {}
+let memDirty = false;
+const sessionSeen = new Set();
+const memFor = id => (mem[id] = mem[id] || { firstSeen: Date.now(), lastSeen: 0, seeCount: 0, sessions: 0, nickname: '', favorite: false, mine: false, familiarMs: 0 });
+setInterval(() => { if (memDirty) { try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); } catch (e) {} memDirty = false; } }, 2500);
+const FAMILIAR_MS = 30 * 60 * 1000;
+
+/* ---------- Capability / honesty (LIVE path ported from build A) ---------- */
+const UA = navigator.userAgent || '';
+const LIVE_URL = 'https://antmanthepro.github.io/nexus-ble-radar/';
+const BLUEFY_URL = 'https://apps.apple.com/app/id1492822055';
+const cap = {
+  iOS: /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+  android: /Android/i.test(UA),
+  firefox: /Firefox|FxiOS/i.test(UA),
+  chromium: /Chrome|Chromium|CriOS|Edg\//.test(UA),
+  secure: window.isSecureContext === true,
+  bt: !!navigator.bluetooth,
+  orientation: 'DeviceOrientationEvent' in window
+};
+cap.scan = cap.bt && typeof navigator.bluetooth.requestLEScan === 'function';
+cap.pick = cap.bt && typeof navigator.bluetooth.requestDevice === 'function';
+cap.gatt = cap.pick;
+cap.watch = cap.bt && typeof window.BluetoothDevice === 'function' && 'watchAdvertisements' in BluetoothDevice.prototype;
+cap.bluefy = cap.iOS && cap.bt;
+cap.orientationNeedsPermission = cap.orientation && typeof DeviceOrientationEvent.requestPermission === 'function';
+function noLiveReason() {
+  if (!cap.secure) return ['Bluetooth only works on a secure (https://) page. Open ' + LIVE_URL + ' instead.', ['copy', 'help']];
+  if (!cap.bt) {
+    if (cap.iOS) return ['This iPhone browser can\'t use Bluetooth — Safari, and Chrome/Edge/Firefox on iPhone too (Apple makes them all run Safari\'s engine). To go LIVE on your iPhone, open this page in the free Bluefy – Web BLE Browser app.', ['bluefy', 'copy', 'help']];
+    if (cap.firefox) return ['Firefox doesn\'t support Web Bluetooth. Open this page in Chrome or Edge to go LIVE.', ['copy', 'help']];
+    if (cap.chromium) return ['Bluetooth is switched off for web pages in this browser. In Chrome/Edge, turn on chrome://flags/#enable-experimental-web-platform-features (Brave: brave://flags/#brave-web-bluetooth-api) and relaunch.', ['copy', 'help']];
+    return ['This browser has no Web Bluetooth. Use Chrome or Edge (Android, Windows, Mac), or Bluefy on iPhone.', ['copy', 'help']];
+  }
+  if (!cap.scan && !cap.pick) return ['This browser has Bluetooth but can\'t look for devices.', ['help']];
+  return null;
+}
+cap.live = !noLiveReason();
+cap.code = !cap.secure ? 'insecure' : !cap.bt ? (cap.iOS ? 'ios' : cap.firefox ? 'firefox' : 'none') : cap.scan ? 'ready' : cap.pick ? (cap.bluefy ? 'bluefy' : 'pick') : 'none';
+cap.why = (noLiveReason() || [null])[0]
+  || (cap.scan ? 'This browser can scan for real. Tap START LIVE SCAN and allow the Bluetooth prompt to go LIVE.'
+    : cap.bluefy ? 'Bluefy detected: go LIVE one device at a time (+ TRACK A DEVICE). If a device gives no signal reading, NEXUS shows link % — not dBm.'
+    : 'Web Bluetooth is here, but open scanning (requestLEScan) is off — you can go LIVE one device at a time (+ TRACK A DEVICE), or enable chrome://flags/#enable-experimental-web-platform-features and relaunch to see everything nearby.');
+const liveLabel = () => cap.scan || !cap.live ? 'START LIVE SCAN' : 'GO LIVE · PICK DEVICE';
+
+function setState(s, reason) {
+  state = s;
+  $('btn-pause').textContent = s === 'paused' ? (realRadio ? 'RESUME LIVE' : 'RESUME PRACTICE') : 'PAUSE';
+  if (reason != null) practiceReason = reason;
+  const chip = $('chip-mode'), ban = $('banner');
+  chip.className = 'chip ' + s; ban.className = 'banner ' + s;
+  $('btn-practice').style.display = realRadio ? '' : 'none';
+  $('btn-pick').style.display = cap.pick && cap.live ? '' : 'none';
+  if (s === 'live') {
+    chip.textContent = 'LIVE';
+    $('banner-title').textContent = 'LIVE';
+    $('banner-text').textContent = liveKind === 'pick'
+      ? (cap.bluefy ? 'Real Bluetooth, one picked device at a time (Bluefy can\'t list everything around you). Devices without a signal reading show link % — how easily they connect — not dBm.' : 'Real Bluetooth, tracking only the device(s) you picked. To see everything nearby, enable chrome://flags/#enable-experimental-web-platform-features and relaunch.')
+      : liveAdvCount ? 'Real Bluetooth advertisements from your radio. Distances and directions are estimates from signal strength.' : 'Scanning with your real Bluetooth radio — waiting for the first advertisement…';
+    $('banner-how').style.display = 'none';
+    $('hud-status').className = 'g'; $('hud-status').textContent = liveStatusText();
+    $('btn-scan').textContent = 'STOP LIVE'; $('btn-scan').classList.add('stop');
+  } else if (s === 'paused') {
+    chip.textContent = 'PAUSED';
+    $('banner-title').textContent = 'PAUSED';
+    $('banner-text').textContent = realRadio ? 'LIVE stopped — last real readings kept, nothing new is being measured; devices fade out. Tap BACK TO PRACTICE to leave live data.' : 'Practice paused — simulated devices are frozen.';
+    $('banner-how').style.display = 'none';
+    $('hud-status').className = 'm'; $('hud-status').textContent = '● PAUSED';
+    $('btn-scan').textContent = realRadio ? liveLabel() : (cap.live ? liveLabel() : 'RESUME PRACTICE'); $('btn-scan').classList.remove('stop');
   } else {
-    setStatus('● Practice Mode · tap START LOOKING to go live', 'sim');
+    for (const [id, d] of devices) if (!d.sim) devices.delete(id);
+    chip.textContent = 'PRACTICE';
+    $('banner-title').textContent = 'PRACTICE MODE';
+    $('banner-text').textContent = (practiceReason ? practiceReason + ' ' : '') + 'Showing simulated devices so you can learn the tools — nothing here is a real measurement.';
+    $('banner-how').style.display = '';
+    $('hud-status').className = 'y'; $('hud-status').textContent = '● PRACTICE · simulated';
+    $('btn-scan').textContent = liveLabel(); $('btn-scan').classList.remove('stop');
   }
-  renderHelp();
-  window.__nexus = { CAP, devices, state: () => ({ realRadio, liveKind, scanning, heading, selectedId }) }; // debug hook
+}
+function liveStatusText() {
+  if (liveKind === 'pick' && !bleScan) { const n = [...devices.values()].filter(d => d.picked).length; return '● LIVE · tracking ' + n + ' picked device' + (n === 1 ? '' : 's'); }
+  return '● LIVE · ' + liveAdvCount + ' adverts';
+}
+
+/* ---------- Going LIVE (A's flow: scan → pick → Bluefy link check) ---------- */
+function beginLive(kind) {
+  if (!realRadio) {
+    // Never mix practice data with live data
+    for (const [id, d] of devices) if (d.sim) devices.delete(id);
+    for (const [k, g] of groups) if (g.sim) groups.delete(k);
+    selectedId = null; liveAdvCount = 0; sweep = null; setWalk(false);
+  }
+  realRadio = true; liveKind = kind;
+  requestWakeLock();
+  setState('live');
+  resumePicked();
+  if (kind === 'pick' && !cap.scan) {
+    showHint(cap.bluefy
+      ? 'LIVE in Bluefy: you pick devices one at a time (Bluefy can\'t list everything around you). If a device can\'t give a signal reading, NEXUS measures how easily it connects instead — shown as “link %”, not dBm. Works best with earbuds, tags, bands and sensors; other phones usually refuse.'
+      : 'LIVE, one device at a time. To see everything nearby, turn on chrome://flags/#enable-experimental-web-platform-features and relaunch.',
+      ['pick', 'compass', 'help']);
+  } else if (cap.orientation && heading == null) {
+    showHint('Tip: tap COMPASS, hold your phone flat at your chest and turn slowly in a full circle. The direction where a device is strongest is (roughly) where it is. Until then, dots are hollow = direction unknown.', ['compass']);
+  } else hideHint();
+}
+function enterPractice(reason, actions) {
+  stopRadio();
+  realRadio = false; liveKind = null; scenarioSeeded = false;
+  groups.clear(); selectedId = null; sweep = null; setWalk(false);
+  setState('practice', reason || (cap.live ? 'Live is available — tap ' + liveLabel() + '.' : cap.why));
+  if (reason) showHint(reason, actions || ['help']); else hideHint();
+}
+async function startLive() {
+  if (state === 'live') return;
+  const why = noLiveReason();
+  if (why) { enterPractice(why[0], why[1]); flashBanner(); return; }
+  if (btAvailable === false) { enterPractice('Bluetooth looks turned off (or this device has none). Turn Bluetooth on, then try again.' + (cap.android ? ' On Android also turn on Location.' : ''), ['help']); return; }
+  if (cap.scan) {
+    try {
+      $('banner-text').textContent = 'Asking your browser for Bluetooth permission…';
+      bleScan = await navigator.bluetooth.requestLEScan({ acceptAllAdvertisements: true, keepRepeatedDevices: true });
+      beginLive('scan');
+      return;
+    } catch (e) {
+      if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
+        enterPractice('Bluetooth permission was not given (or the prompt was closed), so no real radio. Tap ' + liveLabel() + ' again and choose Allow.' + (cap.android ? ' On Android, Chrome also needs Location + “Nearby devices” permission.' : ''), cap.pick ? ['pick', 'help'] : ['help']);
+        return;
+      }
+      // scan exists but failed (flag half-on, adapter busy) → try picking one device
+    }
+  }
+  if (cap.pick) { await pickDevice(); return; }
+  enterPractice('This browser has Bluetooth but can\'t look for devices.', ['help']);
+}
+function stopLive() { stopRadio(); setState('paused'); }
+function stopRadio() {
+  try { if (bleScan && bleScan.active) bleScan.stop(); } catch (e) {}
+  bleScan = null;
+  devices.forEach(d => { try { d.abort && d.abort.abort(); } catch (e) {} try { d.unit === 'link' && d.bt && d.bt.gatt && d.bt.gatt.connected && d.bt.gatt.disconnect(); } catch (e) {} });
+  releaseWakeLock();
+}
+function resumePicked() { // after STOP → START, pick up previously picked devices again
+  devices.forEach(d => {
+    if (!d.bt) return;
+    if (d.unit === 'link') { setTimeout(() => linkLoop(d), 0); return; }
+    if (typeof d.bt.watchAdvertisements === 'function' && !d.bt.watchingAdvertisements) {
+      try { d.abort = typeof AbortController === 'function' ? new AbortController() : null;
+        d.bt.watchAdvertisements(d.abort ? { signal: d.abort.signal } : undefined).catch(() => {}); } catch (e) {}
+    }
+  });
+}
+async function pickDevice() {
+  if (!cap.pick) { showHint(cap.why, ['help']); return; }
+  let bt;
+  try {
+    $('banner-text').textContent = 'Pick a device from the browser list…';
+    bt = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service', 'device_information'] });
+  } catch (e) {
+    const msg = e && e.name === 'NotFoundError' ? 'No device picked (or none found).'
+      : e && e.name === 'SecurityError' ? 'The browser blocked the picker — tap + TRACK A DEVICE.'
+      : 'Couldn\'t open the device picker: ' + ((e && e.message) || e) + '.';
+    if (realRadio) { setState(state); $('banner-text').textContent = msg; return; }
+    enterPractice(msg + ' Tap + TRACK A DEVICE to try again.', ['pick', 'help']);
+    return;
+  }
+  if (!realRadio || state !== 'live') beginLive(bleScan ? 'scan' : 'pick');
+  const id = bt.id;
+  let d = devices.get(id);
+  if (!d) { d = newDevice(id, false, hashAngle(id)); devices.set(id, d); }
+  if (bt.name) d.advName = bt.name;
+  if (!d.adv) { d.adv = { name: bt.name || '', txPower: null, uuids: [], mfg: [], svcData: [] }; d.dec = decodeAdv(d.adv); }
+  d.bt = bt; d.picked = true; selectedId = id;
+  // Path 1: real signal strength (dBm) for this device
+  if (typeof bt.watchAdvertisements === 'function') {
+    try {
+      d.abort = typeof AbortController === 'function' ? new AbortController() : null;
+      bt.addEventListener('advertisementreceived', onLiveAdv);
+      await bt.watchAdvertisements(d.abort ? { signal: d.abort.signal } : undefined);
+      d.unit = 'dBm'; d.path = 'watch';
+      $('banner-text').textContent = 'Watching ' + displayName(d) + '\u2019s broadcasts (real dBm).';
+      return;
+    } catch (e) { /* fall through to link check */ }
+  }
+  // Path 2 (Bluefy / no RSSI): link-quality probing — unit is 'link' (0–100 %), never dBm
+  d.unit = 'link'; d.path = 'link'; d.succEma = 1; d.linkScore = 0; d.latEma = null;
+  $('banner-text').textContent = 'Link-checking ' + displayName(d) + ': NEXUS connects and disconnects to measure how easy the link is. Score is 0–100 % link, not dBm.';
+  linkLoop(d);
+}
+async function linkLoop(d) {
+  if (d.linking) return;
+  d.linking = true;
+  while (state === 'live' && devices.get(d.id) === d && d.bt && d.bt.gatt) {
+    const t0 = performance.now();
+    let ok = false;
+    try { await Promise.race([d.bt.gatt.connect(), sleep(5000).then(() => { throw new Error('timeout'); })]); ok = true; } catch (e) {}
+    const lat = performance.now() - t0;
+    try { d.bt.gatt.disconnect(); } catch (e) {}
+    d.succEma = 0.6 * d.succEma + 0.4 * (ok ? 1 : 0);                 // how often the link works
+    if (ok) { const ls = clamp(100 - (lat - 150) / 40, 5, 100);       // how fast it connects (150 ms → 100)
+      d.latEma = d.latEma == null ? ls : d.latEma * 0.6 + ls * 0.4; }
+    d.linkScore = d.succEma * (d.latEma ?? 0);
+    d.lastLatency = Math.round(lat); d.lastLinkOk = ok;
+    if (ok || d.hasReading) feedLink(d, Date.now());
+    await sleep(900);
+  }
+  d.linking = false;
+}
+function feedLink(d, now) {
+  // 0–100 % link is mapped onto the chart's -100…-30 band ONLY so the sparkline can draw it.
+  // It is never shown as dBm anywhere (see readingText / renderPro / renderDecoder).
+  const v = -100 + d.linkScore * 0.7;
+  const gap = d.lastSeen ? now - d.lastSeen : Infinity;
+  if (gap > 30000) { d.sightings++; const m = memFor(d.id); if (!sessionSeen.has(d.id)) { sessionSeen.add(d.id); m.sessions = (m.sessions||0) + 1; } m.seeCount = (m.seeCount||0) + 1; }
+  if (isFinite(gap)) d.presentMs += Math.min(gap, 5000);
+  d.hasReading = true; d.lastSeen = now; d.raw = v; d.filt = v;
+  d.distM = Math.max(0.3, Math.pow(30, 1 - d.linkScore / 100)); // very rough: 100 % ≈ touching, 0 % ≈ 100 ft+
+  d.samples.push({ t: now, raw: v, f: v }); while (d.samples.length && now - d.samples[0].t > 60000) d.samples.shift();
+  passiveBearing(d, v);
+  const m = memFor(d.id); m.lastSeen = now; memDirty = true;
+}
+function flashBanner() { const b = $('banner'); b.animate && b.animate([{filter:'brightness(2)'},{filter:'brightness(1)'}], {duration:600}); $('banner-how').open = true; }
+
+/* ---------- Wake lock while LIVE (A) ---------- */
+async function requestWakeLock() {
+  try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+}
+function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; }
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state === 'live') requestWakeLock(); });
+
+/* ---------- Hint strip + HOW TO GO LIVE help (A) ---------- */
+async function copyLink() {
+  try { await navigator.clipboard.writeText(LIVE_URL); $('hud-status').textContent = '● Link copied — paste it into Bluefy / Chrome'; }
+  catch (e) { prompt('Copy this link:', LIVE_URL); }
+}
+const openBluefy = () => window.open(BLUEFY_URL, '_blank', 'noopener');
+const HINT_BTNS = {
+  bluefy: ['GET BLUEFY (APP STORE)', openBluefy],
+  copy: ['COPY LINK', copyLink],
+  pick: ['+ TRACK A DEVICE', () => pickDevice()],
+  compass: ['COMPASS', () => enableCompass()],
+  help: ['HOW TO GO LIVE', () => openHelp()]
+};
+function showHint(text, actions) {
+  $('hint-text').textContent = text;
+  const box = $('hint-actions'); box.innerHTML = '';
+  (actions || []).filter(a => HINT_BTNS[a]).filter(a => a !== 'pick' || cap.pick).filter(a => a !== 'compass' || cap.orientation).forEach(a => {
+    const b = document.createElement('button'); b.className = 'btn small'; b.textContent = HINT_BTNS[a][0];
+    b.onclick = () => { if (a === 'compass' || a === 'help') hideHint(); HINT_BTNS[a][1](); };
+    box.appendChild(b);
+  });
+  const x = document.createElement('button'); x.className = 'btn small m'; x.textContent = 'HIDE'; x.onclick = hideHint; box.appendChild(x);
+  $('live-hint').classList.add('on');
+}
+function hideHint() { $('live-hint').classList.remove('on'); }
+function renderHelp() {
+  const yes = '<b class="g">YES</b>', no = '<b class="p">NO</b>', maybe = '<b class="y">?</b>';
+  const rows = [
+    ['Web Bluetooth', cap.bt ? yes : no, cap.bt ? (cap.bluefy ? 'Bluefy (or another iOS BLE browser)' : 'available') : (cap.iOS ? 'iPhone browsers don\'t have it — use Bluefy' : 'use Chrome/Edge')],
+    ['Secure page (https)', cap.secure ? yes : no, cap.secure ? '' : 'Bluetooth needs https://'],
+    ['Bluetooth radio on', btAvailable === true ? yes : btAvailable === false ? no : maybe, btAvailable == null ? 'not reported' : ''],
+    ['See everything nearby', cap.scan ? yes : no, cap.scan ? 'requestLEScan' : (cap.bt && cap.chromium ? 'needs the experimental flag' : 'not in this browser')],
+    ['Pick one device', cap.pick ? yes : no, cap.pick ? 'requestDevice' : ''],
+    ['Live dBm for picked device', cap.watch ? yes : (cap.pick ? maybe : no), cap.watch ? 'watchAdvertisements' : (cap.pick ? 'checked after you pick — falls back to link % (not dBm)' : '')],
+    ['Compass', cap.orientation ? (heading != null ? yes : maybe) : no, cap.orientation ? (heading != null ? Math.round(heading) + '°' : 'tap COMPASS') : '']
+  ];
+  $('cap-table').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="m">${esc(r[2])}</td></tr>`).join('');
+  const v = noLiveReason();
+  $('help-verdict').textContent = state === 'live' ? 'You are LIVE right now — dots are real devices.'
+    : v ? 'Live Mode isn\'t possible in this browser: ' + v[0]
+    : cap.scan ? 'This browser can go LIVE and see everything nearby — tap START LIVE SCAN.'
+    : 'This browser can go LIVE one device at a time — tap ' + liveLabel() + ' or + TRACK A DEVICE.';
+  $('help-mode-note').textContent = realRadio
+    ? 'LIVE: real Bluetooth signals. Distance is a rough guess from signal strength (walls, bodies and pockets change it a lot). Direction is unknown until you turn slowly in a full circle with COMPASS on (or SWEEP in FIND) — hollow dots = direction not known yet. Link % (Bluefy) is not dBm. Feet shown.'
+    : 'PRACTICE: these are made-up devices so you can learn the app. Distance is a rough guess from how strong the Bluetooth signal is. Practice directions are simulated (real phones can\'t tell exact angle without special antennas). Feet shown.';
+}
+function openHelp() { renderHelp(); $('help').classList.add('on'); }
+function closeHelp() { $('help').classList.remove('on'); }
+
+/* ---------- Advertisement pipeline (shared by LIVE + PRACTICE) ---------- */
+function onLiveAdv(ev) {
+  if (state !== 'live' || !ev || !ev.device) return;
+  if (seenEvents.has(ev)) return; seenEvents.add(ev);
+  const rawR = ev.rssi;
+  if (typeof rawR !== 'number' || !isFinite(rawR) || rawR >= 20 || rawR < -127) return;
+  const mfg = []; try { ev.manufacturerData && ev.manufacturerData.forEach((data, id) => mfg.push({ id, data })); } catch (e) {}
+  const svcData = []; try { ev.serviceData && ev.serviceData.forEach((data, uuid) => svcData.push({ uuid, data })); } catch (e) {}
+  liveAdvCount++;
+  if (liveAdvCount === 1 || liveAdvCount % 25 === 0) setState('live');
+  const tx = (typeof ev.txPower === 'number' && isFinite(ev.txPower) && ev.txPower < 30) ? ev.txPower : null;
+  ingest({ id: ev.device.id, name: ev.name || ev.device.name || '', rssi: rawR, txPower: tx, uuids: ev.uuids || [], mfg, svcData, appearance: ev.appearance }, false);
+}
+
+function hashAngle(id) { let h = 2166136261; for (let i = 0; i < id.length; i++) { h ^= id.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 3600) / 3600 * Math.PI * 2; }
+function estimateDistanceM(rssi, ref, n) { return Math.max(0.3, Math.min(60, Math.pow(10, (ref - rssi) / (10 * n)))); }
+
+function newDevice(id, sim, angle) {
+  return { id, sim, advName:'', kf:new KalmanFilter({ R:0.01, Q:kalmanQ }), raw:-100, filt:-100, distM:1, samples:[], trail:[],
+    firstHeard:Date.now(), lastSeen:0, lastProc:0, sightings:0, presentMs:0, strongMs:0, angle, bearing:null, bearingSrc:null,
+    bear:new Array(24).fill(null), adv:null, dec:null, unit:'dBm', hasReading:false, picked:false };
+}
+/* COMPASS (A): while the user turns in a circle, remember signal per 15° heading bucket; the body blocks
+   signal from behind, so the strongest side is a rough bearing. Until then direction stays UNKNOWN (hollow dot). */
+function estimateBearing(d) {
+  const filled = d.bear.map((v, i) => v == null ? null : i).filter(i => i != null);
+  if (filled.length < 8) return null; // need ~120° of turning
+  const vals = filled.map(i => d.bear[i]);
+  if (Math.max(...vals) - Math.min(...vals) < 4) return null; // no clear strong side
+  let best = null, bestScore = -Infinity;
+  for (const i of filled) { const nb = [-1, 0, 1].map(k => d.bear[(i + k + 24) % 24]).filter(v => v != null); const sc = nb.reduce((x, y) => x + y, 0) / nb.length; if (sc > bestScore) { bestScore = sc; best = i; } }
+  return best * 15;
+}
+const bearingProgress = d => d.bear.filter(v => v != null).length;
+function passiveBearing(d, v) {
+  if (d.sim || heading == null) return;
+  const b = Math.round(heading / 15) % 24;
+  d.bear[b] = d.bear[b] == null ? v : d.bear[b] * 0.6 + v * 0.4;
+  if (d.bearingSrc === 'sweep') return;
+  const est = estimateBearing(d);
+  if (est != null) { if (d.bearing == null) d.trail = []; d.bearing = est * Math.PI / 180; d.bearingSrc = 'turn'; }
+}
+function ingest(a, sim) {
+  if (a.rssi == null || isNaN(a.rssi)) return;
+  const now = Date.now();
+  let d = devices.get(a.id);
+  if (!d) { d = newDevice(a.id, sim, sim ? a.simAngle : hashAngle(a.id)); d.raw = d.filt = a.rssi; devices.set(a.id, d); }
+  d.hasReading = true;
+  const pr = PROFILES[profile];
+  if (pr.throttle && now - d.lastProc < pr.throttle) { d.lastSeen = now; return; }
+  const gap = d.lastSeen ? now - d.lastSeen : Infinity;
+  if (gap > 30000) { d.sightings++; const m = memFor(d.id); if (!sessionSeen.has(d.id)) { sessionSeen.add(d.id); m.sessions = (m.sessions||0) + 1; } m.seeCount = (m.seeCount||0) + 1; memDirty = true; }
+  const dt = Math.min(gap, 5000);
+  if (isFinite(dt)) { d.presentMs += dt; if (d.filt >= -80) d.strongMs += dt; const m = memFor(d.id); m.familiarMs = (m.familiarMs||0) + dt; }
+  d.lastSeen = now; d.lastProc = now;
+  if (a.name) d.advName = a.name;
+  d.adv = { name:a.name || d.advName, txPower:a.txPower, uuids:a.uuids || [], mfg:a.mfg || [], svcData:a.svcData || [], appearance:a.appearance };
+  if (!d.dec || d.dec.conf < 0.9) d.dec = decodeAdv(d.adv);
+  d.raw = a.rssi; d.filt = d.kf.filter(a.rssi);
+  const ref = (a.txPower != null && !isNaN(a.txPower)) ? clamp(Math.round(a.txPower - 41), -70, -45) : ref1m; // tx@0m → @1m, kept sane (many devices misreport)
+  d.distM = estimateDistanceM(d.filt, ref, pathN);
+  d.samples.push({ t:now, raw:a.rssi, f:d.filt }); while (d.samples.length && now - d.samples[0].t > 60000) d.samples.shift();
+  if (d.samples.length > 600) d.samples.shift();
+  if (sim && a.simAngle != null) d.angle = a.simAngle;
+  const m = memFor(d.id); m.lastSeen = now; if (!m.firstSeen) m.firstSeen = now; memDirty = true;
+  if (!sim) passiveBearing(d, a.rssi);
+  if (sweep && d.id === selectedId) { const hd = sweep.simHeading != null ? sweep.simHeading : heading; if (hd != null) { const bi = Math.floor(((hd % 360) + 360) % 360 / 30); sweep.bins[bi].push(a.rssi); } }
+  trackGroup(d, dt);
+}
+
+function displayName(d) {
+  const m = mem[d.id];
+  if (m && m.nickname) return m.nickname;
+  if (d.advName) return d.advName;
+  if (d.dec && d.dec.product) return d.dec.product;
+  if (d.dec && d.dec.brand) return d.dec.brand + ' device';
+  return 'Unidentified · #' + d.id.replace(/[^a-z0-9]/gi,'').slice(-4).toUpperCase();
+}
+const isTracker = d => d.dec && d.dec.kind === 'TRACKER';
+const isMine = d => !!(mem[d.id] && mem[d.id].mine);
+const isFav = d => !!(mem[d.id] && mem[d.id].favorite);
+const isFamiliar = d => !!(mem[d.id] && mem[d.id].familiarMs > FAMILIAR_MS);
+
+/* ---------- Following-me tracker watch ---------- */
+function trackGroup(d, dt) {
+  if (!isTracker(d) || isMine(d) || d.unit === 'link') return;
+  if (d.dec.trackerState === 'near-owner') return; // with its owner (maybe you) — not alert-eligible
+  const key = (d.sim ? 'sim|' : '') + (d.dec.brand || '?') + '|' + (d.dec.product || 'tracker');
+  let g = groups.get(key);
+  const now = Date.now();
+  if (!g) { g = { key, label: (d.dec.product || 'Tracker'), brand: d.dec.brand, firstSeen: now, lastHeard: 0, presentMs: 0, strongMs: 0, members: new Set(), lastRssi: d.filt, sim: d.sim, ignored:false }; groups.set(key, g); }
+  const gdt = g.lastHeard ? Math.min(now - g.lastHeard, 60000) : 0;
+  if (g.lastHeard && now - g.lastHeard > 60000) { /* lost for > 1 min: restart the clock */ g.presentMs = 0; g.strongMs = 0; g.firstSeen = now; }
+  else if (gdt) { g.presentMs += gdt; if (d.filt >= -80) g.strongMs += gdt; }
+  g.lastHeard = now; g.lastRssi = d.filt; g.members.add(d.id); g.lastId = d.id;
+}
+function groupStatus(g) {
+  const need = followMin * 60000;
+  const strongPct = g.presentMs ? g.strongMs / g.presentMs : 0;
+  if (g.ignored) return { s:'IGNORED', strongPct };
+  if (Date.now() - g.lastHeard > 60000) return { s:'GONE', strongPct };
+  if (g.presentMs >= need && strongPct >= 0.6) return { s:'ALERT', strongPct };
+  if (g.presentMs >= need / 3) return { s:'WATCHING', strongPct };
+  return { s:'NEW', strongPct };
+}
+/* ---------- PRACTICE simulator (labeled; never runs while LIVE) ---------- */
+const U = s => '0000' + s.toString(16).padStart(4,'0') + '-0000-1000-8000-00805f9b34fb';
+const rb = n => Array.from({length:n}, () => Math.floor(Math.random()*256));
+const SIM = [
+  { id:'sim-airpods', mfg:[[0x004C,[0x07,0x19,0x01,0x0E,0x20,0x75,0xAA,0x30,0x01,...rb(16)]]], dist:1.6, ang:35, iv:180 },
+  { id:'sim-iphone', mfg:[[0x004C,[0x10,0x05,0x01,0x18,0x7A,0x3F,0x2C]]], dist:3.2, ang:300, iv:250 },
+  { id:'sim-findmy', mfg:[[0x004C,[0x12,0x19,0x10,...rb(25)]]], dist:1.1, ang:205, iv:1800, scenario:true },
+  { id:'sim-tile', uuids:[0xFEED], svc:[[0xFEED,[0x02,0x00,...rb(8)]]], dist:6.5, ang:120, iv:1000 },
+  { id:'sim-buds', name:'Galaxy Buds2 Pro', mfg:[[0x0075,[0x42,0x09,0x81,0x02,0x14,...rb(6)]]], dist:4.2, ang:80, iv:200 },
+  { id:'sim-garmin', name:'Forerunner 265', mfg:[[0x0087,[0x07,0x00,...rb(4)]]], dist:2.4, ang:160, iv:500 },
+  { id:'sim-sensor', mfg:[[0x0059,[0x01,0x02,0x5A,0x33]]], uuids:[0x181A], dist:9, ang:250, iv:1000 },
+  { id:'sim-windows', mfg:[[0x0006,[0x01,0x09,0x20,0x22,...rb(8)]]], dist:7.5, ang:340, iv:400 },
+  { id:'sim-fastpair', svc:[[0xFE2C,[0x00,0x0C,0x4F]]], dist:5.4, ang:15, iv:300 },
+  { id:'sim-smarttag', uuids:[0xFD5A], svc:[[0xFD5A,[0x13,...rb(12)]]], dist:15, ang:230, iv:2000 },
+  { id:'sim-unknown', mfg:[[0x0F2B,rb(6)]], dist:21, ang:60, iv:900 },
+  { id:'sim-mystery', dist:12, ang:190, iv:700 }
+].map(s => ({ ...s, next:0, trueDist:s.dist }));
+const gauss = () => { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2*Math.log(u)) * Math.cos(2*Math.PI*v); };
+let scenarioSeeded = false;
+function simTick(now) {
+  if (state !== 'practice') return;
+  if (sweep && sweep.simHeading != null) sweep.simHeading = ((now - sweep.start) / 20000) * 360;
+  SIM.forEach(s => {
+    if (now < s.next) return;
+    s.next = now + s.iv * (0.8 + Math.random()*0.4);
+    if (!s.scenario) s.trueDist = Math.max(0.6, Math.min(28, s.trueDist * (1 + (Math.random()-0.5)*0.02)));
+    s.ang += (Math.random()-0.5) * 0.4;
+    let rssi = -59 - 10*2.5*Math.log10(s.trueDist) + gauss() * (profile === 'outdoor' ? 3.5 : 2.4);
+    if (sweep && sweep.simHeading != null && selectedId === s.id) { const diff = (sweep.simHeading - s.ang) * Math.PI/180; rssi -= 9 * (1 - Math.cos(diff)) / 2; }
+    rssi = Math.max(-100, Math.min(-28, Math.round(rssi)));
+    ingest({ id:s.id, name:s.name || '', rssi, txPower:null, simAngle:s.ang*Math.PI/180,
+      uuids:(s.uuids||[]).map(U), mfg:(s.mfg||[]).map(([id,b]) => ({ id, data:new DataView(new Uint8Array(b).buffer) })),
+      svcData:(s.svc||[]).map(([u,b]) => ({ uuid:U(u), data:new DataView(new Uint8Array(b).buffer) })) }, true);
+    if (s.scenario && !scenarioSeeded) {
+      // PRACTICE scenario: an unknown Find My tag has been in your bag ~14 min
+      const d = devices.get(s.id); const g = [...groups.values()].find(g => g.members.has(s.id));
+      if (d && g) { d.presentMs = g.presentMs = 14*60000; d.strongMs = g.strongMs = 13*60000; g.firstSeen = d.firstHeard = now - 14*60000; scenarioSeeded = true; }
+    }
+  });
+}
+
+/* ---------- Radar drawing ---------- */
+const canvas = $('radar'), ctx = canvas.getContext('2d');
+let W = 0, H = 0, CX = 0, CY = 0, R = 0, sweepRot = 0;
+const MAX_M = 100 / M2FT;
+function resize() {
+  const r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+  W = r.width; H = r.height; canvas.width = Math.round(W*dpr); canvas.height = Math.round(H*dpr);
+  ctx.setTransform(dpr,0,0,dpr,0,0); CX = W/2; CY = H/2 + 6; R = Math.max(40, Math.min(W/2 - 26, H/2 - 30));
+}
+window.addEventListener('resize', resize);
+if (window.ResizeObserver) new ResizeObserver(resize).observe(canvas);
+resize();
+const pos = (ang, dn) => [CX + Math.sin(ang)*R*dn, CY - Math.cos(ang)*R*dn];
+const visible = d => {
+  if (filter === 'saved') return isFav(d);
+  if (filter === 'trackers') return isTracker(d);
+  if (filter === 'named') return !!(d.advName || (d.dec && d.dec.brand) || (mem[d.id] && mem[d.id].nickname));
+  return true;
+};
+function colorFor(d) { if (d.id === selectedId) return '#60efff'; if (isTracker(d) && !isMine(d)) return '#ff0080'; if (isFav(d)) return '#ffcc00'; return '#00ff87'; }
+
+function drawRadar(now) {
+  ctx.clearRect(0,0,W,H);
+  ctx.lineWidth = 1; ctx.font = '9px ui-monospace,monospace';
+  for (let i = 1; i <= 4; i++) {
+    const rr = R*i/4; ctx.strokeStyle = '#00ff8722'; ctx.beginPath(); ctx.arc(CX,CY,rr,0,Math.PI*2); ctx.stroke();
+    ctx.fillStyle = '#60efff77'; ctx.fillText((i*25)+' ft', CX + rr*0.707 + 3, CY - rr*0.707 - 3);
+  }
+  ctx.strokeStyle = '#60efff18'; ctx.beginPath(); ctx.moveTo(CX-R,CY); ctx.lineTo(CX+R,CY); ctx.moveTo(CX,CY-R); ctx.lineTo(CX,CY+R); ctx.stroke();
+  ctx.fillStyle = '#60efffaa'; ctx.font = '11px ui-monospace,monospace';
+  ctx.fillText('N', CX-4, CY-R-8); ctx.fillText('S', CX-4, CY+R+16); ctx.fillText('E', CX+R+6, CY+4); ctx.fillText('W', CX-R-16, CY+4);
+  // sweep beam (cosmetic, slower in ECO)
+  sweepRot += profile === 'eco' ? 0.01 : 0.022;
+  ctx.save(); ctx.translate(CX,CY); ctx.rotate(sweepRot);
+  const g = ctx.createLinearGradient(0,0,R,0); g.addColorStop(0,'#00ff8700'); g.addColorStop(0.7,'#00ff8738'); g.addColorStop(1,'#60efff66');
+  ctx.fillStyle = g; ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,-0.2,0.2); ctx.closePath(); ctx.fill(); ctx.restore();
+  // phone heading / sweep heading wedge
+  const hd = sweep && sweep.simHeading != null ? sweep.simHeading : heading;
+  if (hd != null) { const a = hd*Math.PI/180 - Math.PI/2; ctx.save(); ctx.translate(CX,CY); ctx.fillStyle = '#ff008022'; ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,a-0.26,a+0.26); ctx.closePath(); ctx.fill(); ctx.restore(); }
+  if (now < pulseUntil) { const t = (pulseUntil-now)/700; ctx.strokeStyle = `rgba(255,0,128,${t})`; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(CX,CY,R*(1-t),0,Math.PI*2); ctx.stroke(); }
+  const labels = [];
+  devices.forEach(d => {
+    d.sx = d.sy = null;
+    if (!visible(d)) return;
+    if (!d.hasReading) return;
+    const age = (now - d.lastSeen)/1000; if (age > 20 && d.id !== selectedId) return;
+    const dirKnown = d.sim || d.bearing != null;   // LIVE: never invent an angle
+    const dn = Math.min(1, d.distM / MAX_M);
+    const ang = d.bearing != null ? d.bearing : d.angle;
+    if (!d.trail.length || now - d.trail[d.trail.length-1].t > 400) { d.trail.push({ ang, dn, t:now }); if (d.trail.length > 14) d.trail.shift(); }
+    const [x,y] = pos(ang, dn); d.sx = x; d.sy = y;
+    const col = colorFor(d), sel = d.id === selectedId;
+    if (sel && !dirKnown) { ctx.save(); ctx.setLineDash([4,6]); ctx.strokeStyle = '#60efff55'; ctx.beginPath(); ctx.arc(CX,CY,R*dn,0,Math.PI*2); ctx.stroke(); ctx.restore(); }
+    if (showTrails && dirKnown && d.trail.length > 1) { ctx.strokeStyle = col + '55'; ctx.lineWidth = 1.2; ctx.beginPath(); d.trail.forEach((p,i) => { const [px,py] = pos(p.ang,p.dn); i ? ctx.lineTo(px,py) : ctx.moveTo(px,py); }); ctx.stroke(); }
+    ctx.save(); ctx.globalAlpha = Math.max(0.25, 1 - age/14);
+    ctx.shadowBlur = sel ? 18 : 9; ctx.shadowColor = col; ctx.fillStyle = col;
+    const size = sel ? 7.5 : isTracker(d) ? 6 : 5;
+    if (dirKnown) {
+      ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+      ctx.fillStyle = '#0a0a0f'; ctx.beginPath(); ctx.arc(x,y,size*0.4,0,Math.PI*2); ctx.fill();
+    } else { // hollow = direction unknown (placeholder position on the distance ring)
+      ctx.strokeStyle = col; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.stroke(); ctx.shadowBlur = 0;
+    }
+    if (sel) { ctx.strokeStyle = '#60efff'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(x,y,size+7,0,Math.PI*2); ctx.stroke(); }
+    ctx.restore();
+    if (sel || dn < 0.5 || isTracker(d)) labels.push({ d, x, y, sel, pri: (sel ? 0 : isTracker(d) ? 1 : 2) + dn });
+  });
+  // labels: highest priority first, skip any that would overlap one already drawn
+  ctx.font = '10px ui-monospace,monospace'; const placed = [];
+  labels.sort((a,b) => a.pri - b.pri).forEach(L => {
+    const label = displayName(L.d).slice(0,18), w = ctx.measureText(label).width;
+    const lx = L.x + 10 + w > W ? L.x - 10 - w : L.x + 10, box = [lx - 2, L.y - 17, lx + w + 2, L.y - 3];
+    if (!L.sel && placed.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return;
+    placed.push(box); ctx.fillStyle = '#0a0a0fb0'; ctx.fillRect(box[0], box[1], box[2]-box[0], box[3]-box[1]);
+    ctx.fillStyle = L.sel ? '#60efff' : isTracker(L.d) ? '#ff80bf' : '#e5e7ebcc'; ctx.fillText(label, lx, L.y - 6);
+  });
+  ctx.fillStyle = '#ff0080'; ctx.shadowBlur = 10; ctx.shadowColor = '#ff0080'; ctx.beginPath(); ctx.arc(CX,CY,3.5,0,Math.PI*2); ctx.fill(); ctx.shadowBlur = 0;
+  if (state !== 'practice' && realRadio && ![...devices.values()].some(d => d.hasReading)) {
+    ctx.fillStyle = '#60efffaa'; ctx.font = '12px ui-monospace,monospace'; ctx.textAlign = 'center';
+    ctx.fillText(state !== 'live' ? 'Stopped' : liveKind === 'pick' ? 'Tap + TRACK A DEVICE to pick one' : 'Listening… real devices appear here', CX, CY + R*0.5); ctx.textAlign = 'left';
+  }
+}
+
+function drawWalk(now) {
+  ctx.clearRect(0,0,W,H);
+  const d = selectedId && devices.get(selectedId);
+  if (!d) { ctx.fillStyle = '#60efff'; ctx.font = '13px ui-monospace,monospace'; ctx.textAlign = 'center'; ctx.fillText('Pick a device, then WALK VIEW', CX, CY); ctx.textAlign = 'left'; return; }
+  const horizon = H*0.42;
+  const sky = ctx.createLinearGradient(0,0,0,horizon); sky.addColorStop(0,'#001a22'); sky.addColorStop(1,'#0a0a0f'); ctx.fillStyle = sky; ctx.fillRect(0,0,W,horizon);
+  const gr = ctx.createLinearGradient(0,horizon,0,H); gr.addColorStop(0,'#0f1a12'); gr.addColorStop(1,'#050805'); ctx.fillStyle = gr; ctx.fillRect(0,horizon,W,H-horizon);
+  ctx.strokeStyle = '#00ff8733'; for (let i = 0; i < 14; i++) { const y = horizon + i*i*2; if (y > H) break; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+  for (let i = -6; i <= 6; i++) { ctx.beginPath(); ctx.moveTo(CX + i*12, horizon); ctx.lineTo(CX + i*W*0.25, H); ctx.stroke(); }
+  const ft = d.distM*M2FT, close = 1 - Math.min(1, ft/100);
+  const known = d.sim || d.bearing != null;
+  const ang = d.bearing != null ? d.bearing : d.angle;
+  const rel = known && heading != null ? ang - heading*Math.PI/180 : (known && d.sim ? ang : 0);
+  const bx = CX + Math.sin(rel) * W*0.3 * (1-close*0.5), by = horizon + (H-horizon)*(0.12 + close*0.45), size = 6 + close*38;
+  ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = colorFor(d); ctx.fillStyle = colorFor(d); ctx.beginPath(); ctx.arc(bx,by,size,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#60efff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx,by-40-close*40); ctx.stroke(); ctx.restore();
+  ctx.fillStyle = '#00ff87'; ctx.font = '13px ui-monospace,monospace'; ctx.fillText(displayName(d).slice(0,28), 14, 74);
+  ctx.fillStyle = '#60efff'; ctx.font = '11px ui-monospace,monospace';
+  ctx.fillText('About ' + Math.round(ft) + ' ft (estimate' + (d.unit === 'link' ? ' from link %' : '') + ')', 14, 92);
+  ctx.fillText(d.bearing != null ? 'Bearing (' + (d.bearingSrc === 'turn' ? 'compass turn' : 'sweep') + '): ' + dirName(d.bearing) : d.sim ? 'Simulated direction: ' + dirName(d.angle) : 'Direction unknown — COMPASS + turn in a circle, or SWEEP in FIND', 14, 108);
+}
+const DIRS = ['N','NE','E','SE','S','SW','W','NW'];
+const dirName = a => DIRS[Math.round((((a*180/Math.PI)%360)+360)%360/45)%8];
+/* ---------- UI rendering (5 Hz) ---------- */
+const recent = (d, from, to) => { const now = Date.now(); const xs = d.samples.filter(s => now - s.t <= from && now - s.t >= to).map(s => s.f); return xs.length ? xs.reduce((a,b)=>a+b,0)/xs.length : null; };
+const heatOf = d => d.unit === 'link' ? Math.max(0, Math.min(1, (d.linkScore||0) / 100)) : Math.max(0, Math.min(1, (d.filt + 95) / 55));
+const readingText = d => !d.hasReading ? 'waiting…' : d.unit === 'link' ? Math.round(d.linkScore||0) + '% link' : Math.round(d.filt) + ' dBm';
+function dirText(d) {
+  if (d.sim) return dirName(d.bearing != null ? d.bearing : d.angle) + (d.bearing != null ? ' (practice sweep)' : ' (simulated direction)');
+  if (d.bearing != null) return dirName(d.bearing) + (d.bearingSrc === 'turn' ? ' (from your turn-in-a-circle)' : ' (from your sweep)');
+  return heading == null ? 'Unknown — tap COMPASS, then turn slowly in a full circle (or SWEEP in FIND)' : `Unknown — keep turning slowly (${bearingProgress(d)}/24 directions sampled)`;
+}
+function quality(d) {
+  const now = Date.now(), last5 = d.samples.filter(s => now - s.t < 5000);
+  const rate = last5.length / 5;
+  const mean = last5.reduce((a,s)=>a+s.raw,0) / (last5.length||1);
+  const sd = Math.sqrt(last5.reduce((a,s)=>a+(s.raw-mean)**2,0) / (last5.length||1));
+  const lvl = d.unit === 'link' ? ((d.linkScore||0) >= 75 ? 'EXCELLENT' : (d.linkScore||0) >= 50 ? 'GOOD' : (d.linkScore||0) >= 25 ? 'FAIR' : 'WEAK')
+    : d.filt >= -60 ? 'EXCELLENT' : d.filt >= -70 ? 'GOOD' : d.filt >= -80 ? 'FAIR' : 'WEAK';
+  return { rate, sd, lvl };
+}
+function tagChips(d) {
+  const t = [];
+  if (d.sim) t.push('<span class="chip sim">PRACTICE</span>');
+  if (isTracker(d)) t.push(isMine(d) ? '<span class="chip mine">MY TAG</span>' : '<span class="chip tracker">TRACKER</span>');
+  if (isFamiliar(d)) t.push('<span class="chip fam">FAMILIAR</span>');
+  if (isFav(d)) t.push('<span class="chip practice">★ SAVED</span>');
+  if (d.bearing != null) t.push('<span class="chip proto">' + (d.bearingSrc === 'turn' ? 'COMPASS' : 'SWEPT') + '</span>');
+  if (!d.sim && d.bearing == null) t.push('<span class="chip paused">DIR ?</span>');
+  if (d.unit === 'link') t.push('<span class="chip proto">LINK %</span>');
+  if (d.picked) t.push('<span class="chip live" style="cursor:default">PICKED</span>');
+  return t.join('');
+}
+function renderList() {
+  const now = Date.now();
+  for (const [id, d] of devices) { if (d.picked || (!d.sim && (id === selectedId || isFav(d)))) continue; if (now - d.lastSeen > (d.sim ? 20000 : 120000)) { devices.delete(id); if (selectedId === id) selectedId = null; } }
+  const arr = [...devices.values()].filter(visible).sort((a,b) => (isTracker(b)&&!isMine(b)) - (isTracker(a)&&!isMine(a)) || a.distM - b.distM);
+  const nReal = [...devices.values()].filter(d => d.hasReading).length;
+  $('hud-count').textContent = 'DEVICES: ' + nReal + (realRadio ? ' (real)' : state === 'practice' ? ' (simulated)' : '');
+  $('list').innerHTML = arr.length ? arr.map(d => {
+    const dec = d.dec || {}; const m = mem[d.id] || {};
+    const brand = dec.brand ? esc(dec.brand) + ' · ' : '';
+    return `<div class="dev ${d.id===selectedId?'sel':''} ${isFav(d)?'fav':''} ${isTracker(d)&&!isMine(d)?'trk':''}" data-id="${esc(d.id)}" role="button" tabindex="0">
+      <div class="left"><div class="nm">${esc(displayName(d))}</div>
+        <div class="meta">${brand}${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.conf ? ' · ' + Math.round(dec.conf*100) + '% sure' : ''} · seen ${d.sightings}× · ${fmtDur(d.presentMs)}</div>
+        <div class="tags">${tagChips(d)}</div></div>
+      <div class="r"><div class="rssi">${esc(readingText(d))}</div><div class="ft">~${Math.round(d.distM*M2FT)} ft</div></div></div>`;
+  }).join('') : `<div class="empty">${state === 'live' ? (liveKind === 'pick' && !bleScan ? 'Tap + TRACK A DEVICE to pick a real device.' : 'Listening… no advertisements yet. Bring a Bluetooth device close.') : realRadio ? 'LIVE stopped.' : 'Nothing matches this filter.'}</div>`;
+}
+function renderDetail() {
+  const d = selectedId && devices.get(selectedId);
+  $('detail').style.display = d ? '' : 'none';
+  if (!d) return;
+  const dec = d.dec || {}, m = memFor(d.id);
+  $('d-name').textContent = displayName(d);
+  $('d-brand').innerHTML = `${esc(dec.brand || 'Unknown brand')} · ${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.product && dec.product !== displayName(d) ? ' · ' + esc(dec.product) : ''}${dec.conf ? ` · <span class="c">${Math.round(dec.conf*100)}% sure</span>` : ''}`;
+  $('d-tags').innerHTML = tagChips(d);
+  $('d-dist').textContent = 'About ' + Math.round(d.distM*M2FT) + ' ft';
+  $('d-rssi-lbl').textContent = d.unit === 'link' ? 'LINK QUALITY (not dBm)' : 'SIGNAL (smoothed)';
+  $('d-rssi').textContent = !d.hasReading ? 'waiting…' : d.unit === 'link' ? Math.round(d.linkScore||0) + '% link' + (d.lastLatency ? ' · ' + d.lastLatency + ' ms connect' : '') : Math.round(d.filt) + ' dBm (raw ' + Math.round(d.raw) + ')';
+  $('d-dir').textContent = dirText(d);
+  $('d-seen').textContent = d.sightings + '× this session · ' + (m.seeCount||0) + '× total';
+  $('d-time').textContent = fmtDur(d.presentMs) + ' now · ' + fmtDur(m.familiarMs||0) + ' total';
+  $('d-first').textContent = fmtTime(m.firstSeen) + (m.sessions > 1 ? ' · ' + m.sessions + ' sessions' : '');
+  $('d-id').textContent = d.id.length > 22 ? d.id.slice(0,22) + '…' : d.id;
+  $('d-fav').textContent = isFav(d) ? '★ SAVED' : '☆ SAVE';
+  $('d-mine').textContent = isMine(d) ? 'NOT MINE' : 'THIS IS MINE';
+  if (document.activeElement !== $('d-nick') && $('d-nick').dataset.for !== d.id) { $('d-nick').value = m.nickname || ''; $('d-nick').dataset.for = d.id; }
+}
+function renderWatch() {
+  const arr = [...groups.values()].sort((a,b) => b.presentMs - a.presentMs);
+  let alerts = 0, watching = 0;
+  const need = followMin * 60000;
+  $('watch-list').innerHTML = arr.length ? arr.map(g => {
+    const st = groupStatus(g); if (st.s === 'ALERT') alerts++; if (st.s === 'WATCHING') watching++;
+    const pct = Math.min(100, Math.round(g.presentMs / need * 100));
+    const chip = st.s === 'ALERT' ? '<span class="chip alert">⚠ FOLLOWING?</span>' : st.s === 'WATCHING' ? '<span class="chip tracker">WATCHING</span>' : `<span class="chip paused">${st.s}</span>`;
+    return `<div class="watch-item ${st.s==='ALERT'?'alerting':''}" data-group="${esc(g.key)}">
+      <div style="display:flex;justify-content:space-between;gap:.4rem;align-items:center"><b style="font-size:.78rem">${esc(g.label)}</b>${chip}</div>
+      <div class="note" style="margin-top:.2rem">${esc(g.brand || 'Unknown brand')} · near you ${fmtDur(g.presentMs)} · strong signal ${Math.round(st.strongPct*100)}% · now ${Math.round(g.lastRssi)} dBm · ${g.members.size} ID${g.members.size>1?'s':''} ${g.sim ? '· <span class="y">PRACTICE scenario</span>' : ''}</div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="row" style="margin-top:.45rem"><button class="btn small pink" data-act="find">FIND IT</button><button class="btn small" data-act="mine">IT'S MINE</button><button class="btn small" data-act="ignore">${g.ignored?'UNIGNORE':'IGNORE'}</button></div>
+    </div>`;
+  }).join('') : `<div class="empty">No unknown item trackers heard${state==='live'?' yet':''}. Tags you mark as mine never appear here.</div>`;
+  const b = $('watch-badge'); b.textContent = alerts || watching; b.classList.toggle('on', alerts + watching > 0); b.style.background = alerts ? '#ff0080' : '#ff008088';
+  $('follow-strip').classList.toggle('on', alerts > 0);
+  $('chip-follow').style.display = alerts ? '' : 'none';
+  if (alerts) $('follow-text').textContent = `⚠ ${alerts} unknown tracker${alerts>1?'s':''} ${alerts>1?'have':'has'} stayed near you ${followMin}+ min${state==='practice'?' (PRACTICE scenario)':''}. Check your bag, coat and car.`;
+}
+function renderPro() {
+  const d = selectedId && devices.get(selectedId);
+  $('pro-target').innerHTML = d ? `Target: <b class="c">${esc(displayName(d))}</b> ${d.sim ? '<span class="chip sim">PRACTICE</span>' : '<span class="chip live">LIVE</span>'}${d.unit === 'link' ? ' <span class="chip proto">LINK % · not dBm</span>' : ''}` : 'Pick a device in DEVICES or tap a radar dot.';
+  const mc = $('mon'), mx = mc.getContext('2d'); mx.clearRect(0,0,mc.width,mc.height);
+  mx.strokeStyle = '#ffffff12'; for (let db = -100; db <= -30; db += 10) { const y = (( -30 - db) / 70) * mc.height; mx.beginPath(); mx.moveTo(0,y); mx.lineTo(mc.width,y); mx.stroke(); }
+  if (!d) { ['mon-rssi','mon-dist','mon-q','mon-sd','mon-rate'].forEach(i => $(i).textContent = '—'); renderDecoder(null); return; }
+  const now = Date.now(), win = 30000, pts = d.samples.filter(s => now - s.t < win);
+  const X = t => mc.width - ((now - t) / win) * mc.width, Y = v => ((-30 - Math.max(-100, Math.min(-30, v))) / 70) * mc.height;
+  mx.fillStyle = '#8b93a1'; pts.forEach(s => mx.fillRect(X(s.t)-1, Y(s.raw)-1, 2, 2));
+  mx.strokeStyle = '#60efff'; mx.lineWidth = 2.5; mx.beginPath(); pts.forEach((s,i) => i ? mx.lineTo(X(s.t), Y(s.f)) : mx.moveTo(X(s.t), Y(s.f))); mx.stroke();
+  mx.fillStyle = '#60efff88'; mx.font = '18px ui-monospace,monospace';
+  if (d.unit === 'link') { mx.fillText('100% link', 4, 18); mx.fillText('0% link', 4, mc.height - 4); } else { mx.fillText('-30 dBm', 4, 18); mx.fillText('-100 dBm', 4, mc.height - 4); }
+  const q = quality(d);
+  $('mon-rssi').textContent = !d.hasReading ? 'waiting…' : d.unit === 'link' ? Math.round(d.linkScore||0) + '% link (not dBm)' + (d.lastLatency ? ' · ' + d.lastLatency + ' ms' : '') : Math.round(d.raw) + ' / ' + Math.round(d.filt) + ' dBm';
+  $('mon-dist').textContent = '~' + Math.round(d.distM*M2FT) + ' ft (' + d.distM.toFixed(1) + ' m)';
+  $('mon-q').textContent = q.lvl; $('mon-q').className = q.lvl === 'WEAK' ? 'p' : q.lvl === 'FAIR' ? 'y' : 'g';
+  $('mon-sd').textContent = d.unit === 'link' ? 'n/a (link %)' : '±' + q.sd.toFixed(1) + ' dB';
+  $('mon-rate').textContent = q.rate.toFixed(1) + (d.unit === 'link' ? ' checks/s' : ' pkt/s');
+  renderDecoder(d);
+}
+function renderDecoder(d) {
+  const src = $('dec-src');
+  if (!d) { src.textContent = '—'; src.className = 'chip paused'; $('dec-body').innerHTML = '<tr><td>—</td><td>Select a device</td></tr>'; return; }
+  src.textContent = d.sim ? 'PRACTICE' : 'LIVE'; src.className = 'chip ' + (d.sim ? 'sim' : 'live');
+  const a = d.adv || {}, dec = d.dec || {}, rows = [];
+  rows.push(['Advertised name', a.name ? esc(a.name) : '<span class="m">(none broadcast)</span>']);
+  rows.push(['Brand guess', `${esc(dec.brand || '—')} <span class="m">(${Math.round((dec.conf||0)*100)}%)</span>`]);
+  rows.push(['Type guess', esc(KIND_LABEL[dec.kind] || '—') + (dec.product ? ' · ' + esc(dec.product) : '')]);
+  if (dec.trackerState) rows.push(['Tracker state', dec.trackerState === 'separated' ? '<span class="p">away from its owner</span>' : '<span class="g">near its owner</span>']);
+  (a.mfg||[]).forEach(({id, data}) => {
+    const b = bytes(data);
+    rows.push(['Company ID', `<span class="y">${h4(id)}</span> ${esc(COMPANY[id] || 'not in inlined table')}`]);
+    if (id === 0x004C && b.length) rows.push(['Apple type', `0x${b[0].toString(16).toUpperCase().padStart(2,'0')} ${esc(APPLE_TYPES[b[0]] || 'unknown')}`]);
+    rows.push(['Mfr data (' + b.length + ' B)', `<span class="c">${hex(data)}</span>`]);
+  });
+  if (a.uuids && a.uuids.length) rows.push(['Service UUIDs', a.uuids.map(u => esc(svcName(u))).join('<br>')]);
+  (a.svcData||[]).forEach(({uuid, data}) => rows.push(['Svc data ' + esc(svcName(uuid).split(' ')[0]), `<span class="c">${hex(data)}</span>`]));
+  rows.push(['TX power', a.txPower != null ? a.txPower + ' dBm' : '<span class="m">not advertised</span>']);
+  if (a.appearance != null) rows.push(['Appearance', '0x' + Number(a.appearance).toString(16)]);
+  if (d.unit === 'link') { rows.push(['Link quality', Math.round(d.linkScore||0) + '% link <span class="m">(connect success × speed — not dBm)</span>']); rows.push(['Source', '<span class="m">Picked in the browser chooser; this browser gives no signal strength or advertisement data for it (Bluefy link check).</span>']); }
+  else rows.push(['RSSI raw / smooth', d.hasReading ? Math.round(d.raw) + ' / ' + Math.round(d.filt) + ' dBm' : 'waiting…']);
+  rows.push(['Browser ID', `<span class="y">${esc(d.id)}</span> <span class="m">(not MAC)</span>`]);
+  (dec.notes||[]).forEach(n => rows.push(['Note', esc(n)]));
+  $('dec-body').innerHTML = rows.map(([k,v]) => `<tr><td>${esc(k)}</td><td>${v}</td></tr>`).join('');
+}
+let lastTrend = 'STEADY';
+function renderFind() {
+  const d = selectedId && devices.get(selectedId);
+  if (!d) { $('find-target').textContent = 'Pick a device first (DEVICES tab, radar dot, or FIND IT on a watch alert).'; $('find-heat').textContent = '—'; $('find-trend').textContent = '—'; return; }
+  $('find-target').innerHTML = `Finding <b class="c">${esc(displayName(d))}</b> · ~${Math.round(d.distM*M2FT)} ft · ${esc(readingText(d))} ${d.sim ? '<span class="chip sim">PRACTICE</span>' : ''}`;
+  const h = heatOf(d); $('find-needle').style.left = `calc(${(h*100).toFixed(1)}% - 2px)`;
+  const lbl = h > 0.75 ? 'HOT' : h > 0.5 ? 'WARM' : h > 0.25 ? 'COOL' : 'COLD';
+  const heat = $('find-heat'); heat.textContent = lbl; heat.style.color = h > 0.75 ? '#ff0080' : h > 0.5 ? '#ffcc00' : h > 0.25 ? '#00ff87' : '#60efff';
+  const a = recent(d, 1500, 0), b = recent(d, 5000, 2000);
+  let trend = 'STEADY';
+  if (a != null && b != null) trend = a - b >= 2 ? 'WARMER' : b - a >= 2 ? 'COLDER' : 'STEADY';
+  if (trend === 'WARMER' && lastTrend !== 'WARMER' && vibeOn && navigator.vibrate) navigator.vibrate(60);
+  lastTrend = trend;
+  $('find-trend').textContent = trend === 'WARMER' ? '▲ WARMER — keep going this way' : trend === 'COLDER' ? '▼ COLDER — turn around or try another direction' : '■ STEADY — move a few steps or sweep';
+  if (sweep) {
+    const left = Math.max(0, 20 - (Date.now() - sweep.start)/1000);
+    const hd = sweep.simHeading != null ? sweep.simHeading : heading;
+    $('find-sweep-out').innerHTML = `<span class="y">Sweeping… turn slowly · ${left.toFixed(0)}s left · heading ${hd != null ? Math.round(hd) + '°' : '—'}</span>`;
+    if (left <= 0) finishSweep();
+  }
+}
+function render() {
+  renderList(); renderDetail(); renderWatch();
+  const tab = document.querySelector('.tab.active').dataset.tab;
+  if (tab === 'pro') renderPro(); if (tab === 'find') renderFind();
+  $('hud-view').textContent = 'VIEW: ' + (viewMode === 'walk' ? 'WALK' : 'RADAR');
+  $('hud-heading').textContent = heading != null ? Math.round(heading) + '° ' + DIRS[Math.round(heading/45)%8] : (compassOn ? 'waiting' : '—');
+  $('hud-profile').textContent = 'PROFILE: ' + PROFILES[profile].label;
+  $('hud-legend').textContent = state === 'live'
+    ? 'LIVE: real Bluetooth signals. Ring = rough distance from signal strength (feet; walls, bodies, pockets change it a lot). Hollow dot = direction not known yet — tap COMPASS and turn slowly in a full circle, or SWEEP in FIND. Link % is not dBm.'
+    : state === 'practice' ? 'PRACTICE: simulated devices and angles for learning. Ring = distance estimate (feet). Tap a dot to inspect.'
+    : 'PAUSED: no new measurements.' + (realRadio ? ' Hollow dot = direction unknown.' : '');
+  if (state === 'live') $('hud-status').textContent = liveStatusText();
+}
+
+/* ---------- Find: Geiger audio, compass, sweep ---------- */
+function blip(freq, dur) {
+  if (!audioCtx) return; const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'square'; o.frequency.value = freq; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.02);
+}
+(function geiger() {
+  let wait = 300;
+  const d = selectedId && devices.get(selectedId);
+  if (soundOn && d && Date.now() - d.lastSeen < 3000) { const h = heatOf(d); wait = 1150 - h*1050; blip(500 + h*1500, 0.025); }
+  setTimeout(geiger, wait);
+})();
+async function enableCompass() {
+  const out = $('find-sweep-out');
+  if (typeof DeviceOrientationEvent === 'undefined') { out.textContent = 'No motion sensors in this browser — use HOT/COLD only.'; return; }
+  try { if (typeof DeviceOrientationEvent.requestPermission === 'function') { const r = await DeviceOrientationEvent.requestPermission(); if (r !== 'granted') { out.textContent = 'Compass permission denied.'; return; } } } catch (e) { out.textContent = 'Compass permission failed: ' + e.message; return; }
+  if (!compassOn) {
+    const h = e => { let hd = null; if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) hd = e.webkitCompassHeading; else if (e.absolute && typeof e.alpha === 'number') hd = 360 - e.alpha; if (hd == null) return;
+      const so = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0); heading = ((hd + so) % 360 + 360) % 360; };
+    window.addEventListener('deviceorientationabsolute', h); window.addEventListener('deviceorientation', h);
+  }
+  compassOn = true; $('find-compass').classList.add('on'); $('find-compass').textContent = 'COMPASS ON'; $('btn-compass').classList.add('on'); $('btn-compass').textContent = 'COMPASS ON';
+  if (state === 'live') hideHint();
+  setTimeout(() => { if (heading == null) out.textContent = 'No compass heading from this device (desktop?). Sweep needs a phone compass; HOT/COLD still works.'; }, 2500);
+}
+function startSweep() {
+  const d = selectedId && devices.get(selectedId);
+  if (!d) { $('find-sweep-out').textContent = 'Pick a device first.'; return; }
+  if (d.unit === 'link') { $('find-sweep-out').textContent = 'Sweep needs real signal-strength readings; this device only gives link % (Bluefy link check). Use COMPASS + turning slowly and follow HOT/COLD.'; return; }
+  if (d.sim) sweep = { start: Date.now(), bins: Array.from({length:12}, () => []), simHeading: 0 };
+  else if (heading == null) { $('find-sweep-out').textContent = 'Turn on the compass first (ENABLE COMPASS). Without it, turn slowly and follow HOT/COLD.'; return; }
+  else sweep = { start: Date.now(), bins: Array.from({length:12}, () => []), simHeading: null };
+  $('find-sweep').textContent = 'SWEEPING…'; $('find-sweep').classList.add('on');
+}
+function finishSweep() {
+  const s = sweep; sweep = null; $('find-sweep').textContent = 'START SWEEP'; $('find-sweep').classList.remove('on');
+  const d = selectedId && devices.get(selectedId);
+  const means = s.bins.map(b => b.length >= 1 ? b.reduce((a,c)=>a+c,0)/b.length : null);
+  const filled = means.filter(v => v != null);
+  if (!d || filled.length < 4) { $('find-sweep-out').innerHTML = '<span class="p">Not enough readings — turn slower and keep the device advertising.</span>'; return; }
+  let bi = 0; means.forEach((v,i) => { if (v != null && (means[bi] == null || v > means[bi])) bi = i; });
+  const sorted = [...filled].sort((a,b)=>a-b), median = sorted[Math.floor(sorted.length/2)];
+  const spread = means[bi] - median, coverage = filled.length / 12;
+  const evidence = Math.round(Math.max(0, Math.min(1, spread / 8)) * coverage * 100);
+  if (d.bearing == null) d.trail = [];
+  d.bearing = (bi*30 + 15) * Math.PI/180; d.bearingSrc = 'sweep';
+  $('find-sweep-out').innerHTML = `Best guess: <b class="c">${dirName(d.bearing)} (${bi*30+15}°)</b> · strongest bin ${spread.toFixed(1)} dB above median · ${Math.round(coverage*100)}% of circle covered · evidence <b class="${evidence>60?'g':evidence>30?'y':'p'}">${evidence}%</b>${d.sim ? ' <span class="chip sim">PRACTICE</span>' : ''}. Walk that way and watch HOT/COLD.`;
+}
+
+/* ---------- GATT Explorer (pick-one, read-only) ---------- */
+let gattDev = null;
+async function gattPick() {
+  const out = $('gatt-out');
+  if (!navigator.bluetooth || !navigator.bluetooth.requestDevice) { out.innerHTML = '<span class="y">No Web Bluetooth here — ' + esc(cap.why) + '</span>'; return; }
+  try {
+    out.textContent = 'Opening the browser device chooser…';
+    gattDev = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service','device_information','heart_rate','environmental_sensing','generic_access'] });
+    out.textContent = 'Connecting to ' + (gattDev.name || 'device') + '…';
+    gattDev.addEventListener('gattserverdisconnected', () => { $('gatt-dc').disabled = true; out.textContent += '\n— disconnected'; });
+    const server = await gattDev.gatt.connect(); $('gatt-dc').disabled = false;
+    const services = await server.getPrimaryServices();
+    const lines = [`LIVE · ${gattDev.name || '(no name)'} · ${services.length} service(s) visible`];
+    const READ = { '00002a00':'Device Name','00002a19':'Battery %','00002a29':'Manufacturer','00002a24':'Model','00002a26':'Firmware','00002a27':'Hardware' };
+    for (const s of services) {
+      lines.push('▸ ' + svcName(s.uuid));
+      let chars = []; try { chars = await s.getCharacteristics(); } catch (e) {}
+      for (const c of chars) {
+        const p = c.properties, props = ['read','write','writeWithoutResponse','notify','indicate'].filter(k => p[k]).join(',');
+        let val = ''; const k = c.uuid.slice(0,8);
+        if (p.read && READ[k]) { try { const v = await c.readValue(); val = k === '00002a19' ? ' = ' + v.getUint8(0) + '%' : ' = "' + new TextDecoder().decode(v) + '"'; } catch (e) { val = ' (read blocked)'; } }
+        lines.push('   · ' + (READ[k] || c.uuid) + ' [' + props + ']' + val);
+      }
+    }
+    out.textContent = lines.join('\n');
+  } catch (e) { out.innerHTML = '<span class="y">' + esc(e.name === 'NotFoundError' ? 'Chooser closed — no device picked.' : (e.name + ': ' + e.message)) + '</span>'; }
+}
+/* ---------- Wiring ---------- */
+function selectDev(id) { selectedId = id; $('d-nick').dataset.for = ''; render(); }
+function showTab(t) { document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t)); document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + t)); render(); }
+document.querySelectorAll('.tab').forEach(b => b.onclick = () => showTab(b.dataset.tab));
+$('btn-scan').onclick = () => { if (state === 'live') stopLive(); else if (state === 'paused' && !realRadio && !cap.live) setState('practice'); else startLive(); };
+$('btn-pause').onclick = () => { if (state === 'live') stopLive(); else if (state === 'practice') setState('paused'); else if (realRadio) startLive(); else setState('practice'); };
+$('btn-pick').onclick = () => pickDevice();
+$('btn-compass').onclick = () => enableCompass();
+$('btn-practice').onclick = () => enterPractice(null);
+$('btn-help').onclick = openHelp;
+$('chip-mode').onclick = openHelp;
+$('chip-mode').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openHelp(); } };
+$('help-close').onclick = closeHelp;
+$('help').onclick = e => { if (e.target.id === 'help') closeHelp(); };
+$('help-bluefy').onclick = openBluefy; $('how-bluefy').onclick = openBluefy;
+$('help-copy').onclick = copyLink; $('how-copy').onclick = copyLink;
+$('how-full').onclick = openHelp;
+if (cap.orientation) $('btn-compass').style.display = '';
+$('btn-ping').onclick = () => { pulseUntil = Date.now() + 700; };
+$('btn-trails').onclick = () => { showTrails = !showTrails; $('btn-trails').classList.toggle('on', showTrails); };
+function setWalk(on) { viewMode = on ? 'walk' : 'radar'; $('btn-walk').classList.toggle('on', on); $('btn-walk').textContent = on ? 'RADAR VIEW' : 'WALK VIEW'; }
+$('btn-walk').onclick = () => { if (!selectedId && viewMode !== 'walk') { $('hud-status').textContent = '● Pick a device for Walk View'; return; } setWalk(viewMode !== 'walk'); };
+document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
+  profile = b.dataset.mode; document.querySelectorAll('[data-mode]').forEach(x => x.classList.toggle('active', x === b));
+  const p = PROFILES[profile];
+  if (p.N != null) { pathN = p.N; $('n-slider').value = pathN; $('n-val').textContent = pathN.toFixed(1); }
+  if (p.Q != null) { kalmanQ = p.Q; $('q-slider').value = kalmanQ; $('q-val').textContent = kalmanQ.toFixed(1); devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ)); }
+  if (profile === 'pro') showTab('pro');
+});
+$('n-slider').oninput = e => { pathN = +e.target.value; $('n-val').textContent = pathN.toFixed(1); };
+$('tx-slider').oninput = e => { ref1m = +e.target.value; $('tx-val').textContent = ref1m; };
+$('q-slider').oninput = e => { kalmanQ = +e.target.value; $('q-val').textContent = kalmanQ.toFixed(1); devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ)); };
+$('follow-min').oninput = e => { followMin = +e.target.value; $('follow-min-val').textContent = followMin + 'm'; try { localStorage.setItem('nexus-ble-v4-followmin', followMin); } catch (x) {} };
+try { const fm = +localStorage.getItem('nexus-ble-v4-followmin'); if (fm >= 3 && fm <= 60) { followMin = fm; $('follow-min').value = fm; $('follow-min-val').textContent = fm + 'm'; } } catch (e) {}
+$('list').onclick = e => { const r = e.target.closest('[data-id]'); if (r) selectDev(r.dataset.id); };
+$('list').onkeydown = e => { if (e.key === 'Enter') { const r = e.target.closest('[data-id]'); if (r) selectDev(r.dataset.id); } };
+canvas.addEventListener('click', e => {
+  const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+  let best = null, bd = 26;
+  devices.forEach(d => { if (d.sx == null) return; const dd = Math.hypot(d.sx - x, d.sy - y); if (dd < bd) { bd = dd; best = d; } });
+  if (best) selectDev(best.id);
+});
+$('d-fav').onclick = () => { const d = devices.get(selectedId); if (!d) return; const m = memFor(d.id); m.favorite = !m.favorite; memDirty = true; render(); };
+$('d-mine').onclick = () => { const d = devices.get(selectedId); if (!d) return; const m = memFor(d.id); m.mine = !m.mine; memDirty = true; if (m.mine) for (const [k,g] of groups) { g.members.delete(d.id); if (!g.members.size) groups.delete(k); } render(); };
+const saveNick = () => { const d = devices.get(selectedId); if (!d) return; memFor(d.id).nickname = $('d-nick').value.trim().slice(0,32); memDirty = true; $('d-nick').blur(); render(); };
+$('d-nick-save').onclick = saveNick;
+$('d-nick').onkeydown = e => { if (e.key === 'Enter') saveNick(); e.stopPropagation(); };
+$('d-find').onclick = () => showTab('find');
+$('d-decode').onclick = () => { showTab('pro'); $('decoder-card').scrollIntoView({ block:'nearest', behavior:'smooth' }); };
+$('d-monitor').onclick = () => showTab('pro');
+$('follow-review').onclick = () => { showTab('watch'); $('tab-watch').scrollIntoView({ block:'nearest' }); };
+$('watch-list').onclick = e => {
+  const btn = e.target.closest('[data-act]'), item = e.target.closest('[data-group]'); if (!btn || !item) return;
+  const g = groups.get(item.dataset.group); if (!g) return;
+  if (btn.dataset.act === 'find') { selectDev(g.lastId); showTab('find'); }
+  if (btn.dataset.act === 'mine') { g.members.forEach(id => { memFor(id).mine = true; }); memDirty = true; groups.delete(g.key); }
+  if (btn.dataset.act === 'ignore') g.ignored = !g.ignored;
+  render();
+};
+$('find-sound').onclick = () => {
+  soundOn = !soundOn;
+  if (soundOn && !audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; } }
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+  $('find-sound').textContent = soundOn ? '🔊 GEIGER ON' : '🔈 GEIGER OFF'; $('find-sound').classList.toggle('on', soundOn);
+};
+$('find-vibe').onclick = () => { vibeOn = !vibeOn && !!navigator.vibrate; $('find-vibe').textContent = vibeOn ? 'VIBRATE ON' : (navigator.vibrate ? 'VIBRATE OFF' : 'NO VIBRATE'); $('find-vibe').classList.toggle('on', vibeOn); };
+$('find-compass').onclick = enableCompass;
+$('find-sweep').onclick = () => sweep ? finishSweep() : startSweep();
+$('gatt-pick').onclick = gattPick;
+$('gatt-dc').onclick = () => { try { gattDev && gattDev.gatt.disconnect(); } catch (e) {} };
+if (!cap.gatt) $('gatt-pick').textContent = 'PICK & CONNECT (unavailable here)';
+
+function rowsForExport() {
+  return [...devices.values()].map(d => { const m = mem[d.id] || {}, dec = d.dec || {};
+    return { source: d.sim ? 'PRACTICE' : 'LIVE', name: displayName(d), brand: dec.brand || '', type: KIND_LABEL[dec.kind] || '', confidence_pct: Math.round((dec.conf||0)*100),
+      browser_id: d.id, unit: d.unit, rssi_dbm: d.unit === 'link' || !d.hasReading ? '' : Math.round(d.filt), link_pct: d.unit === 'link' ? Math.round(d.linkScore||0) : '',
+      direction: d.sim ? 'simulated' : d.bearing != null ? dirName(d.bearing) : 'unknown', about_ft: Math.round(d.distM*M2FT), seen_this_session: d.sightings, seen_total: m.seeCount || 0,
+      first_seen: m.firstSeen ? new Date(m.firstSeen).toISOString() : '', nearby_s: Math.round(d.presentMs/1000), saved: !!m.favorite, mine: !!m.mine, nickname: m.nickname || '',
+      company_ids: (d.adv && d.adv.mfg || []).map(x => h4(x.id)).join(' '), services: (d.adv && d.adv.uuids || []).map(svcName).join(' | ') }; });
+}
+function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+$('btn-csv').onclick = () => { const rows = rowsForExport(); if (!rows.length) return; const cols = Object.keys(rows[0]); const q = v => '"' + String(v).replace(/"/g,'""') + '"'; download('nexus-ble-' + state + '-' + Date.now() + '.csv', [cols.join(','), ...rows.map(r => cols.map(c => q(r[c])).join(','))].join('\n'), 'text/csv'); };
+$('btn-json').onclick = () => download('nexus-ble-' + state + '-' + Date.now() + '.json', JSON.stringify({ app:'NEXUS BLE Tactical Radar', version: VERSION, mode: state, live_kind: liveKind, exported: new Date().toISOString(), calibration: { pathN, ref1m, kalmanQ, profile }, devices: rowsForExport() }, null, 2), 'application/json');
+$('btn-forget').onclick = () => { if (!confirm('Forget nicknames, saved devices, "mine" tags and history on this browser?')) return; mem = {}; sessionSeen.clear(); try { localStorage.removeItem(MEM_KEY); localStorage.removeItem('nexus-ble-favs'); } catch (e) {} render(); };
+
+document.addEventListener('keydown', e => {
+  if (e.target.matches('input,textarea')) return;
+  if ($('help').classList.contains('on')) { if (e.key === 'Escape') closeHelp(); return; }
+  if (e.key === ' ') { e.preventDefault(); $('btn-scan').click(); }
+  else if (e.key === 'l' || e.key === 'L') openHelp();
+  else if (e.key === 't' || e.key === 'T') $('btn-trails').click();
+  else if (e.key === 'v' || e.key === 'V' || e.key === '3') $('btn-walk').click();
+  else if (e.key === 'Escape') { if (viewMode === 'walk') setWalk(false); else { selectedId = null; render(); } }
+});
+
+/* ---------- Main loop ---------- */
+function frame(now) {
+  const t = Date.now();
+  simTick(t);
+  if (viewMode === 'walk') drawWalk(t); else drawRadar(t);
+  requestAnimationFrame(frame);
+}
+setInterval(render, 200);
+// boot: always starts in honest PRACTICE
+setState('practice', cap.live ? 'Live is available — tap ' + liveLabel() + '.' : cap.why);
+{ const why0 = noLiveReason(); if (why0) showHint(why0[0], why0[1]); }
+if (cap.bt) {
+  try { navigator.bluetooth.addEventListener('advertisementreceived', onLiveAdv); } catch (e) {}
+  try {
+    navigator.bluetooth.getAvailability && navigator.bluetooth.getAvailability().then(a => { btAvailable = a; renderHelp(); }).catch(() => {});
+    navigator.bluetooth.addEventListener && navigator.bluetooth.addEventListener('availabilitychanged', e => { btAvailable = !!e.value; renderHelp(); });
+  } catch (e) {}
+}
+if (cap.orientation && !cap.orientationNeedsPermission && (cap.android || navigator.maxTouchPoints > 0)) enableCompass(); // Android: no prompt needed
+renderHelp();
+requestAnimationFrame(frame);
+render();
+window.NEXUS = { version: VERSION, cap, get state() { return state; }, get liveKind() { return liveKind; }, get realRadio() { return realRadio; }, decodeAdv, devices, groups, noLiveReason, readingText };
 })();
 </script>
 </body>
