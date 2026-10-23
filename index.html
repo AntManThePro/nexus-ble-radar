@@ -1161,8 +1161,7 @@ function renderDecoder(d) {
   if (!d) { src.textContent = '—'; src.className = 'chip paused'; $('dec-body').innerHTML = '<tr><td>—</td><td>Select a device</td></tr>'; return; }
   src.textContent = d.sim ? 'PRACTICE' : 'LIVE'; src.className = 'chip ' + (d.sim ? 'sim' : 'live');
   const a = d.adv || {}, dec = d.dec || {}, rows = [];
-  rows.push(['Advertised name (raw)', d.advName ? `<span class="mut">${esc(d.advName)}</span>` : '<span class="mut">(none)</span>']);
-    rows.push(['Advertised name', a.name ? esc(a.name) : '<span class="m">(none broadcast)</span>']);
+  rows.push(['Advertised name (raw)', (d.advName || a.name) ? `<span class="mut">${esc(d.advName || a.name)}</span>` : '<span class="mut">(none broadcast)</span>']);
   rows.push(['Brand guess', `${esc(dec.brand || '—')} <span class="m">(${Math.round((dec.conf||0)*100)}%)</span>`]);
   rows.push(['Type guess', esc(KIND_LABEL[dec.kind] || '—') + (dec.product ? ' · ' + esc(dec.product) : '')]);
   if (dec.trackerState) rows.push(['Tracker state', dec.trackerState === 'separated' ? '<span class="p">away from its owner</span>' : '<span class="g">near its owner</span>']);
