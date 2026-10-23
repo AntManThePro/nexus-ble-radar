@@ -41,8 +41,8 @@ button,input{font-family:inherit}
 .banner details{margin-top:.25rem;color:var(--mut)}
 .banner summary{cursor:pointer;color:var(--c)}
 .banner code{color:var(--c);word-break:break-all}
-.follow-strip{display:none;align-items:center;justify-content:space-between;gap:.6rem;padding:.5rem .9rem;background:#ff008014;border-bottom:1px solid #ff008066;font-size:.72rem;color:#ffd0e6}
-.follow-strip.on{display:flex}
+.follow-strip{display:flex;align-items:center;justify-content:space-between;gap:.6rem;padding:.5rem .9rem;min-height:2.4rem;box-sizing:border-box;background:transparent;border-bottom:1px solid transparent;font-size:.72rem;color:#ffd0e6;visibility:hidden;pointer-events:none}
+.follow-strip.on{visibility:visible;pointer-events:auto;background:#ff008014;border-bottom-color:#ff008066}
 .layout{display:flex;flex-direction:column}
 .stage{position:relative;height:min(52vh,460px);min-height:300px;border-bottom:1px solid var(--line)}
 #radar{display:block;width:100%;height:100%;touch-action:manipulation;cursor:crosshair}
@@ -159,7 +159,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.0.0</span>
+    <span class="chip ver" id="ver">v4.0.1</span>
   </div>
 </header>
 
@@ -357,14 +357,14 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.0.0 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.0.1 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.0.0 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.0.1 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
 const VERSION = '4.0.0';
@@ -602,8 +602,22 @@ function enterPractice(reason, actions) {
 async function startLive() {
   if (state === 'live') return;
   const why = noLiveReason();
-  if (why) { enterPractice(why[0], why[1]); flashBanner(); return; }
-  if (btAvailable === false) { enterPractice('Bluetooth looks turned off (or this device has none). Turn Bluetooth on, then try again.' + (cap.android ? ' On Android also turn on Location.' : ''), ['help']); return; }
+  if (why) {
+    enterPractice(why[0], why[1]);
+    flashBanner();
+    $('hud-status').className = 'y';
+    $('hud-status').textContent = '● Can\'t go LIVE here — see HOW TO GO LIVE';
+    openHelp();
+    return;
+  }
+  if (btAvailable === false) {
+    enterPractice('Bluetooth looks turned off (or this device has none). Turn Bluetooth on, then try again.' + (cap.android ? ' On Android also turn on Location.' : ''), ['help']);
+    flashBanner();
+    $('hud-status').className = 'y';
+    $('hud-status').textContent = '● Bluetooth off — turn it on, then try again';
+    openHelp();
+    return;
+  }
   if (cap.scan) {
     try {
       $('banner-text').textContent = 'Asking your browser for Bluetooth permission…';
@@ -959,7 +973,8 @@ function drawRadar(now) {
     const age = (now - d.lastSeen)/1000; if (age > 20 && d.id !== selectedId) return;
     const dirKnown = d.sim || d.bearing != null;   // LIVE: never invent an angle
     const dn = Math.min(1, d.distM / MAX_M);
-    const ang = d.bearing != null ? d.bearing : d.angle;
+    // Unknown direction: park on a stable hashed slot around the ring (not north-stack). Not a real bearing.
+    const ang = d.bearing != null ? d.bearing : (d.sim ? d.angle : hashAngle(d.id));
     if (!d.trail.length || now - d.trail[d.trail.length-1].t > 400) { d.trail.push({ ang, dn, t:now }); if (d.trail.length > 14) d.trail.shift(); }
     const [x,y] = pos(ang, dn); d.sx = x; d.sy = y;
     const col = colorFor(d), sel = d.id === selectedId;
