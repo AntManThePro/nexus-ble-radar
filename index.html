@@ -159,7 +159,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.0.1</span>
+    <span class="chip ver" id="ver">v4.0.2</span>
   </div>
 </header>
 
@@ -347,7 +347,7 @@ footer a{color:var(--c)}
     <div class="note" style="margin:0 0 .2rem">WHAT THIS BROWSER CAN DO (checked just now)</div>
     <table id="cap-table"></table>
     <div class="note" style="margin:.8rem 0 .2rem">HOW TO GO LIVE</div>
-    <p><b class="c">iPhone / iPad:</b> Safari can't do Bluetooth — and neither can Chrome, Edge or Firefox on iPhone (Apple makes them all use Safari's engine). Install the free <b>Bluefy – Web BLE Browser</b> app, open this page in it, and allow Bluetooth. Then tap <b>START LIVE SCAN</b> or <b>+ TRACK A DEVICE</b>. Bluefy lets you pick devices one at a time; if a device can't give a signal reading, NEXUS measures how easily it connects instead — shown as <b>link %</b>, not dBm.</p>
+    <p><b class="c">iPhone / iPad:</b> Safari can't do Bluetooth — and neither can Chrome, Edge or Firefox on iPhone (Apple makes them all use Safari's engine). Install the free <b>Bluefy – Web BLE Browser</b> app, open this page in it, and allow Bluetooth. Then tap <b>GO LIVE · PICK DEVICE</b> or <b>+ TRACK A DEVICE</b> (the button label matches what this browser can do). Bluefy lets you pick devices one at a time; if a device can't give a signal reading, NEXUS measures how easily it connects instead — shown as <b>link %</b>, not dBm. A full nearby scan and passive Tracker Watch on iPhone need the planned <b>native NEXUS iOS app</b> later — this web cut stays honest about that limit.</p>
     <div class="row"><button class="btn small primary" id="help-bluefy">GET BLUEFY (APP STORE)</button><button class="btn small" id="help-copy">COPY LINK</button></div>
     <p><b class="c">Android:</b> Use Chrome. Turn on Bluetooth and Location, and allow Chrome “Nearby devices”. To see <i>everything</i> around you, open <code>chrome://flags/#enable-experimental-web-platform-features</code>, set it to Enabled, relaunch. Without the flag you can still track devices one at a time.</p>
     <p><b class="c">Computer:</b> Chrome or Edge on Windows/Mac (same flag for the full scan). Firefox and Safari can't do Bluetooth.</p>
@@ -357,14 +357,14 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.0.1 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.0.2 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.0.1 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.0.2 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
 const VERSION = '4.0.0';
@@ -849,10 +849,24 @@ function ingest(a, sim) {
   trackGroup(d, dt);
 }
 
+function cleanName(s) {
+  if (s == null) return null;
+  let n = String(s).replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  if (!n) return null;
+  const low = n.toLowerCase();
+  if (low === 'n/a' || low === 'na' || low === 'unknown' || low === 'null' || low === 'undefined') return null;
+  if (/^ble[-_\s]?[0-9a-f]{2,}$/i.test(n)) return null;
+  if (/^([0-9a-f]{2}[:-]){5}[0-9a-f]{2}$/i.test(n)) return null;           // MAC-like
+  if (/^[0-9a-f]{8,}$/i.test(n) && !/[g-z]/i.test(n)) return null;         // bare hex id
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(n)) return null;
+  if (n.length <= 2 && !/[a-z]/i.test(n)) return null;
+  return n.slice(0, 40);
+}
 function displayName(d) {
   const m = mem[d.id];
   if (m && m.nickname) return m.nickname;
-  if (d.advName) return d.advName;
+  const nice = cleanName(d.advName);
+  if (nice) return nice;
   if (d.dec && d.dec.product) return d.dec.product;
   if (d.dec && d.dec.brand) return d.dec.brand + ' device';
   return 'Unidentified · #' + d.id.replace(/[^a-z0-9]/gi,'').slice(-4).toUpperCase();
@@ -1112,7 +1126,11 @@ function renderWatch() {
       <div class="bar"><i style="width:${pct}%"></i></div>
       <div class="row" style="margin-top:.45rem"><button class="btn small pink" data-act="find">FIND IT</button><button class="btn small" data-act="mine">IT'S MINE</button><button class="btn small" data-act="ignore">${g.ignored?'UNIGNORE':'IGNORE'}</button></div>
     </div>`;
-  }).join('') : `<div class="empty">No unknown item trackers heard${state==='live'?' yet':''}. Tags you mark as mine never appear here.</div>`;
+  }).join('') : `<div class="empty">${
+    (state === 'live' && liveKind === 'pick' && !bleScan)
+      ? 'Tracker Watch needs the full nearby scan to hear unknown trackers. Not available in this pick-one / Bluefy mode — use your phone\'s built-in unknown-tracker alerts (Find My / Android Unknown Tracker Alerts). Tags you mark as mine never appear here.'
+      : ('No unknown item trackers heard' + (state === 'live' ? ' yet' : '') + '. Tags you mark as mine never appear here.')
+  }</div>`;
   const b = $('watch-badge'); b.textContent = alerts || watching; b.classList.toggle('on', alerts + watching > 0); b.style.background = alerts ? '#ff0080' : '#ff008088';
   $('follow-strip').classList.toggle('on', alerts > 0);
   $('chip-follow').style.display = alerts ? '' : 'none';
@@ -1143,7 +1161,8 @@ function renderDecoder(d) {
   if (!d) { src.textContent = '—'; src.className = 'chip paused'; $('dec-body').innerHTML = '<tr><td>—</td><td>Select a device</td></tr>'; return; }
   src.textContent = d.sim ? 'PRACTICE' : 'LIVE'; src.className = 'chip ' + (d.sim ? 'sim' : 'live');
   const a = d.adv || {}, dec = d.dec || {}, rows = [];
-  rows.push(['Advertised name', a.name ? esc(a.name) : '<span class="m">(none broadcast)</span>']);
+  rows.push(['Advertised name (raw)', d.advName ? `<span class="mut">${esc(d.advName)}</span>` : '<span class="mut">(none)</span>']);
+    rows.push(['Advertised name', a.name ? esc(a.name) : '<span class="m">(none broadcast)</span>']);
   rows.push(['Brand guess', `${esc(dec.brand || '—')} <span class="m">(${Math.round((dec.conf||0)*100)}%)</span>`]);
   rows.push(['Type guess', esc(KIND_LABEL[dec.kind] || '—') + (dec.product ? ' · ' + esc(dec.product) : '')]);
   if (dec.trackerState) rows.push(['Tracker state', dec.trackerState === 'separated' ? '<span class="p">away from its owner</span>' : '<span class="g">near its owner</span>']);
