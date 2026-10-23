@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.0.0</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.0.0 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.0.2</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.0.2 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0f' stroke='%2300ff87' stroke-width='1.5'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%2360efff' stroke-width='1.2'/%3E%3Cpath d='M20 42 L32 14 L44 42 M25.5 32 H38.5' fill='none' stroke='%2300ff87' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3.2' fill='%23ff0080'/%3E%3C/svg%3E">
 <style>
@@ -367,7 +367,7 @@ var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;
 /* NEXUS · BLE Tactical Radar v4.0.2 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.0.0';
+const VERSION = '4.0.2';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -851,7 +851,7 @@ function ingest(a, sim) {
 
 function cleanName(s) {
   if (s == null) return null;
-  let n = String(s).replace(/[\u0000-\u001F\u007F]/g, '').trim();
+  let n = String(s).replace(/[\u0000-\u001F\u007F\uFFFD]/g, '').trim();
   if (!n) return null;
   const low = n.toLowerCase();
   if (low === 'n/a' || low === 'na' || low === 'unknown' || low === 'null' || low === 'undefined') return null;
@@ -1127,7 +1127,7 @@ function renderWatch() {
       <div class="row" style="margin-top:.45rem"><button class="btn small pink" data-act="find">FIND IT</button><button class="btn small" data-act="mine">IT'S MINE</button><button class="btn small" data-act="ignore">${g.ignored?'UNIGNORE':'IGNORE'}</button></div>
     </div>`;
   }).join('') : `<div class="empty">${
-    (state === 'live' && liveKind === 'pick' && !bleScan)
+    (realRadio && !bleScan)
       ? 'Tracker Watch needs the full nearby scan to hear unknown trackers. Not available in this pick-one / Bluefy mode — use your phone\'s built-in unknown-tracker alerts (Find My / Android Unknown Tracker Alerts). Tags you mark as mine never appear here.'
       : ('No unknown item trackers heard' + (state === 'live' ? ' yet' : '') + '. Tags you mark as mine never appear here.')
   }</div>`;

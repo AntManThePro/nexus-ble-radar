@@ -26,7 +26,7 @@ NEXUS never claims LIVE without a real radio path.
 - **FOLLOWING ME?** (PROTO): alerts when an item tracker that isn't marked *mine* stays near you with a strong signal. Needs **full scan** (real dBm). In Bluefy / pick-one mode the tab says Tracker Watch is not available there — use the phone's built-in unknown-tracker alerts.
 - Pro tools (free): Signal Strength Monitor, Advertisement Decoder, GATT Explorer (PROTO), calibration, CSV/JSON export.
 - Find mode: HOT/COLD, Geiger (muteable), vibration when supported, SWEEP, COMPASS (hollow dots = direction unknown).
-- Session nicknames, favorites, MINE, Walk View, Eco / Normal / Outside / Advanced profiles.
+- Session nicknames, favorites, MINE, Walk View, ECO / PRECISE / OUTDOOR / PRO profiles.
 
 ## Browser matrix
 | Client | Mode |
