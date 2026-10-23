@@ -10,17 +10,23 @@
 <style>
 :root { --g:#00ff87; --c:#60efff; --p:#ff0080; --y:#ffcc00; --bg:#0a0a0f; }
 body { background:var(--bg); color:#e5e7eb; font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace; overflow:hidden; }
-.nexus-stamp { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; border-bottom:1px solid #00ff8733; }
+.nexus-stamp { display:flex; align-items:center; justify-content:space-between; padding:.75rem 1rem; padding-top:max(.75rem, env(safe-area-inset-top)); border-bottom:1px solid #00ff8733; }
 .nexus-chip { font-size:.65rem; letter-spacing:.12em; color:var(--c); text-transform:uppercase; }
 .nexus-stamp h1 { font-size:1.6rem; font-weight:800; letter-spacing:.08em; color:var(--g); text-shadow:0 0 12px #00ff8766; margin:0; }
 .nexus-stamp p { font-size:.7rem; color:#9ca3af; margin:0; }
 .glow { text-shadow:0 0 8px currentColor; }
-.panel { background:#0f0f16cc; border:1px solid #00ff8733; backdrop-filter:blur(8px); }
+.panel { background:#0f0f16cc; border:1px solid #00ff8733; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); }
 .mode-btn { border:1px solid #ffffff22; transition:all .15s; }
 .mode-btn.active { border-color:var(--g); color:var(--g); box-shadow:0 0 12px #00ff8755; }
+.mode-btn.live { border-color:var(--g); color:#0a0a0f; background:var(--g); font-weight:700; }
 .target-row { border-left:3px solid transparent; }
 .target-row.selected { border-left-color:var(--c); background:#60efff11; }
 .target-row.fav { border-left-color:var(--y); }
+.badge { font-size:.62rem; letter-spacing:.14em; padding:.2rem .5rem; border-radius:.3rem; border:1px solid; cursor:pointer; }
+.badge.practice { color:var(--y); border-color:#ffcc0088; }
+.badge.live { color:#0a0a0f; background:var(--g); border-color:var(--g); animation:livepulse 1.6s infinite; }
+@keyframes livepulse { 0%,100% { box-shadow:0 0 0 0 #00ff8788; } 50% { box-shadow:0 0 0 6px #00ff8700; } }
+#help table td { padding:.2rem .4rem; border-bottom:1px solid #ffffff10; vertical-align:top; }
 ::-webkit-scrollbar { width:6px; }
 ::-webkit-scrollbar-thumb { background:#00ff8744; border-radius:3px; }
 </style>
@@ -32,31 +38,39 @@ body { background:var(--bg); color:#e5e7eb; font-family:ui-monospace,SFMono-Regu
     <h1>NEXUS</h1>
     <p>NExtended Xperimental USers</p>
   </div>
-  <svg width="56" height="56" viewBox="0 0 64 64" aria-label="NEXUS sigil">
-    <rect width="64" height="64" rx="14" fill="#0a0a0f" stroke="#00ff87" stroke-width="1.5"/>
-    <circle cx="32" cy="32" r="19" fill="none" stroke="#60efff" stroke-width="1.2"/>
-    <path d="M20 42 L32 14 L44 42 M25.5 32 H38.5" fill="none" stroke="#00ff87" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
-    <circle cx="32" cy="32" r="3.2" fill="#ff0080"/>
-  </svg>
+  <div class="flex items-center gap-3">
+    <button id="mode-badge" class="badge practice" title="What mode am I in?">PRACTICE</button>
+    <svg width="56" height="56" viewBox="0 0 64 64" aria-label="NEXUS sigil">
+      <rect width="64" height="64" rx="14" fill="#0a0a0f" stroke="#00ff87" stroke-width="1.5"/>
+      <circle cx="32" cy="32" r="19" fill="none" stroke="#60efff" stroke-width="1.2"/>
+      <path d="M20 42 L32 14 L44 42 M25.5 32 H38.5" fill="none" stroke="#00ff87" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="32" cy="32" r="3.2" fill="#ff0080"/>
+    </svg>
+  </div>
 </header>
 
 <div class="flex-1 flex flex-col md:flex-row overflow-hidden">
   <div class="flex-1 relative min-h-0">
     <canvas id="radar" class="w-full h-full"></canvas>
-    <div class="absolute top-3 left-3 panel px-3 py-2 text-xs">
-      <div id="status-line" class="text-[#00ff87] glow font-bold">● Practice Mode · looking for signals</div>
+    <div class="absolute top-3 left-3 panel px-3 py-2 text-xs max-w-[70%]">
+      <div id="status-line" class="text-[#ffcc00] glow font-bold">● Practice Mode · looking for signals</div>
       <div id="mode-line" class="text-[#60efff] mt-0.5">VIEW: RADAR</div>
       <div id="target-count" class="text-[#ffcc00]">DEVICES NEARBY: 0</div>
     </div>
-    <div id="compass" class="absolute top-3 right-3 panel px-3 py-2 text-xs text-[#60efff] hidden">
-      HEADING: <span id="heading">N</span>
+    <div id="compass" class="absolute top-3 right-3 panel px-3 py-2 text-xs text-[#60efff] text-right">
+      HEADING: <span id="heading">—</span>
+      <div id="target-dir" class="text-[10px] text-gray-400"></div>
     </div>
-    <div class="absolute bottom-3 left-3 right-3 md:right-auto panel px-3 py-2 text-[10px] text-gray-400 max-w-md">
+    <div id="live-hint" class="absolute left-3 right-3 md:right-auto md:max-w-md panel px-3 py-2 text-[11px] text-gray-200 hidden" style="top:5.6rem;border-color:#ffcc0066">
+      <div id="hint-text"></div>
+      <div id="hint-actions" class="flex flex-wrap gap-1.5 mt-2"></div>
+    </div>
+    <div class="absolute bottom-3 left-3 right-3 md:right-auto panel px-3 py-2 text-[10px] text-gray-400 max-w-md hidden md:block" id="footnote">
       Distance is a rough guess from how strong the Bluetooth signal is. Direction is estimated (real phones can't tell exact angle without special antennas). Feet shown. Walk View is a simple 3D preview toward the selected device.
     </div>
   </div>
 
-  <div class="w-full md:w-96 flex flex-col border-t md:border-t-0 md:border-l border-[#00ff8733] bg-[#0a0a0f]">
+  <div class="w-full md:w-96 flex flex-col border-t md:border-t-0 md:border-l border-[#00ff8733] bg-[#0a0a0f] max-h-[50vh] md:max-h-none">
     <div class="p-3 border-b border-[#00ff8733] space-y-2">
       <div class="flex flex-wrap gap-1.5">
         <button id="btn-scan" class="mode-btn px-3 py-1.5 text-xs rounded">START LOOKING</button>
@@ -67,20 +81,26 @@ body { background:var(--bg); color:#e5e7eb; font-family:ui-monospace,SFMono-Regu
         <button id="btn-3d" class="mode-btn px-3 py-1.5 text-xs rounded">3D WALK VIEW</button>
       </div>
       <div class="flex flex-wrap gap-1.5">
+        <button id="btn-pick" class="mode-btn px-3 py-1.5 text-xs rounded hidden">+ TRACK A DEVICE</button>
+        <button id="btn-compass" class="mode-btn px-3 py-1.5 text-xs rounded hidden">COMPASS</button>
+        <button id="btn-practice" class="mode-btn px-3 py-1.5 text-xs rounded hidden">BACK TO PRACTICE</button>
+        <button id="btn-help" class="mode-btn px-3 py-1.5 text-xs rounded">HOW TO GO LIVE</button>
+      </div>
+      <div class="flex flex-wrap gap-1.5">
         <button data-mode="eco" class="mode-btn px-2.5 py-1 text-[10px] rounded">SIMPLE</button>
         <button data-mode="precision" class="mode-btn active px-2.5 py-1 text-[10px] rounded">NORMAL</button>
         <button data-mode="street" class="mode-btn px-2.5 py-1 text-[10px] rounded">OUTSIDE</button>
         <button data-mode="pro" class="mode-btn px-2.5 py-1 text-[10px] rounded">ADVANCED</button>
       </div>
       <div id="pro-tools" class="hidden text-[10px] space-y-1 pt-1">
-        <label class="flex items-center gap-2">Guess tightness=<input id="n-slider" type="range" min="1.8" max="4.0" step="0.1" value="2.4" class="flex-1"> <span id="n-val">2.4</span></label>
+        <label class="flex items-center gap-2">Guess tightness=<input id="n-slider" type="range" min="1.8" max="4.0" step="0.1" value="2.5" class="flex-1"> <span id="n-val">2.5</span></label>
         <label class="flex items-center gap-2">Expected strength=<input id="tx-slider" type="range" min="-70" max="-40" step="1" value="-59" class="flex-1"> <span id="tx-val">-59</span></label>
         <label class="flex items-center gap-2">Smoothing=<input id="q-slider" type="range" min="0.5" max="8" step="0.1" value="3" class="flex-1"> <span id="q-val">3.0</span></label>
         <button id="btn-export" class="mode-btn px-2 py-1 rounded w-full">SAVE LIST</button>
       </div>
     </div>
     <div class="flex-1 overflow-y-auto p-2 space-y-1" id="target-list"></div>
-    <div id="detail" class="border-t border-[#00ff8733] p-3 text-xs hidden">
+    <div id="detail" class="border-t border-[#00ff8733] p-3 text-xs hidden overflow-y-auto max-h-[45%]">
       <div class="flex justify-between items-start">
         <div>
           <div id="d-name" class="text-[#60efff] font-bold"></div>
@@ -89,17 +109,37 @@ body { background:var(--bg); color:#e5e7eb; font-family:ui-monospace,SFMono-Regu
         <button id="d-fav" class="text-xl leading-none">☆</button>
       </div>
       <div class="grid grid-cols-2 gap-2 mt-2 text-[10px]">
-        <div>ID <div id="d-mac" class="text-[#ffcc00] font-mono"></div></div>
+        <div>ID <div id="d-mac" class="text-[#ffcc00] font-mono break-all"></div></div>
         <div>ABOUT <div id="d-dist" class="text-[#00ff87] font-mono"></div></div>
         <div>SIGNAL STRENGTH <div id="d-rssi" class="text-[#ff0080] font-mono"></div></div>
         <div>RAW READING <div id="d-raw" class="font-mono text-gray-500"></div></div>
       </div>
       <div class="mt-2 text-[10px] text-gray-500">TECH DETAILS</div>
-      <div id="d-hex" class="font-mono text-[10px] text-[#60efff] break-all"></div>
+      <div id="d-hex" class="font-mono text-[10px] text-[#60efff] break-all whitespace-pre-wrap"></div>
       <div class="mt-2 text-[10px] text-gray-500">STRENGTH OVER TIME</div>
       <canvas id="spark" width="320" height="40" class="w-full h-10 bg-black/40 rounded"></canvas>
       <div class="mt-2 text-[10px] text-gray-500">DIRECTION (estimate)</div>
       <div id="d-dir" class="text-[#60efff] font-mono"></div>
+    </div>
+  </div>
+</div>
+
+<div id="help" class="fixed inset-0 bg-black/80 hidden z-50 flex items-center justify-center p-3">
+  <div class="panel rounded-lg max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 text-xs text-gray-200">
+    <div class="flex justify-between items-center mb-2">
+      <div class="text-[#00ff87] font-bold text-sm glow">LIVE MODE · HOW IT WORKS</div>
+      <button id="help-close" class="mode-btn px-2 py-1 rounded">CLOSE</button>
+    </div>
+    <div id="help-verdict" class="mb-3 text-[#ffcc00]"></div>
+    <div id="help-mode-note" class="mb-3 text-[10px] text-gray-400"></div>
+    <div class="text-[10px] text-gray-500 mb-1">WHAT THIS BROWSER CAN DO (checked just now)</div>
+    <table class="w-full text-[11px] mb-3" id="cap-table"></table>
+    <div class="text-[10px] text-gray-500 mb-1">HOW TO GO LIVE</div>
+    <div class="space-y-2 text-[11px] leading-relaxed">
+      <div><span class="text-[#60efff] font-bold">iPhone / iPad:</span> Safari can't do Bluetooth — and neither can Chrome, Edge or Firefox on iPhone (Apple makes them all use Safari's engine). Install the free <b>Bluefy – Web BLE Browser</b> app, open this page in it, and allow Bluetooth. Then tap <b>START LOOKING</b> (or <b>+ TRACK A DEVICE</b>).</div>
+      <div><span class="text-[#60efff] font-bold">Android:</span> Use Chrome. Turn on Bluetooth and Location, and allow Chrome “Nearby devices”. To see <i>everything</i> around you, open <span class="text-[#ffcc00]">chrome://flags/#enable-experimental-web-platform-features</span>, set it to Enabled, relaunch. Without the flag you can still track devices one at a time.</div>
+      <div><span class="text-[#60efff] font-bold">Computer:</span> Chrome or Edge on Windows/Mac (same flag for the full scan). Firefox and Safari can't do Bluetooth.</div>
+      <div class="text-gray-400">Live Mode only reads the public “I'm here” broadcasts devices already send. It doesn't pair, doesn't connect (except in Bluefy's link check, which just opens and closes a connection to the one device you picked), and nothing leaves your phone. Many phones change their Bluetooth ID every few minutes on purpose, so the same phone can show up as a “new” device.</div>
     </div>
   </div>
 </div>
@@ -109,20 +149,29 @@ body { background:var(--bg); color:#e5e7eb; font-family:ui-monospace,SFMono-Regu
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 
 const METERS_TO_FEET = 3.28084;
+const NEXUS_VERSION = 'v4 · Live Mode';
 
 (() => {
-  const canvas = document.getElementById('radar');
+  const $ = id => document.getElementById(id);
+  const canvas = $('radar');
   const ctx = canvas.getContext('2d', { alpha: true });
-  const spark = document.getElementById('spark');
+  const spark = $('spark');
   const sctx = spark.getContext('2d');
 
   let CX, CY, R, sweep = 0;
   let mode = 'precision', favsOnly = false, showTrails = true;
   let viewMode = 'radar'; // 'radar' or 'walk'
-  let scanning = false, bleScan = null, realRadio = false;
-  let pathLossN = 2.4, defaultTx = -59, kalmanQ = 3;
+  let scanning = false, bleScan = null;
+  let realRadio = false;          // true = Live Mode (real Bluetooth readings only)
+  let liveKind = null;            // 'scan' (everything nearby) | 'pick' (devices the user picked)
+  let pathLossN = 2.5, defaultTx = -59, kalmanQ = 3;
   let selectedId = null, pulseUntil = 0;
-  let walkDist = 0; // how far we've "walked" in 3D view
+  let walkDist = 0;               // practice-only "walked" feet in 3D view
+  let heading = null;             // compass degrees (0 = N), null if unknown
+  let wakeLock = null;
+  let lastListRender = 0;
+  let btAvailable = null;         // navigator.bluetooth.getAvailability() result
+  const seenEvents = new WeakSet();
 
   const devices = new Map();
   const TYPES = ['AUDIO','BEACON','WEARABLE','PHONE','SENSOR','TRACKER','UNKNOWN'];
@@ -137,11 +186,42 @@ const METERS_TO_FEET = 3.28084;
   };
   const DIR_NAMES = ['N','NE','E','SE','S','SW','W','NW'];
 
+  // ---------- capability check ----------
+  const UA = navigator.userAgent || '';
+  const CAP = {
+    iOS: /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
+    android: /Android/i.test(UA),
+    firefox: /Firefox|FxiOS/i.test(UA),
+    chromium: /Chrome|Chromium|CriOS|Edg\//.test(UA),
+    secure: window.isSecureContext === true,
+    bt: !!navigator.bluetooth,
+  };
+  CAP.scan = CAP.bt && typeof navigator.bluetooth.requestLEScan === 'function';
+  CAP.pick = CAP.bt && typeof navigator.bluetooth.requestDevice === 'function';
+  CAP.watch = CAP.bt && typeof window.BluetoothDevice === 'function' && 'watchAdvertisements' in BluetoothDevice.prototype;
+  CAP.bluefy = CAP.iOS && CAP.bt;
+  CAP.orientation = 'DeviceOrientationEvent' in window;
+  CAP.orientationNeedsPermission = CAP.orientation && typeof DeviceOrientationEvent.requestPermission === 'function';
+
+  // ---------- helpers ----------
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const sleep = ms => new Promise(r => setTimeout(r, ms));
   function toFeet(m) { return m * METERS_TO_FEET; }
-  function angleToDir(a) {
-    const deg = ((a * 180 / Math.PI) + 360) % 360;
-    const idx = Math.round(deg / 45) % 8;
-    return DIR_NAMES[idx];
+  function degToDir(deg) { return DIR_NAMES[Math.round((((deg % 360) + 360) % 360) / 45) % 8]; }
+  // angles are compass radians: 0 = North, clockwise
+  function angleToDir(a) { return degToDir(a * 180 / Math.PI); }
+  function polar(a, r) { return { x: Math.sin(a) * r, y: -Math.cos(a) * r }; }
+  function hashAngle(str) { let h = 2166136261; for (const ch of String(str)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return ((h >>> 0) / 4294967296) * Math.PI * 2; }
+  function hexOf(dv, max = 40) {
+    const b = new Uint8Array(dv.buffer, dv.byteOffset, dv.byteLength);
+    const s = Array.from(b.slice(0, max), x => x.toString(16).padStart(2, '0')).join(' ');
+    return b.length > max ? s + ' …' : s;
+  }
+  function uuid16(u) {
+    if (typeof u === 'number') return u.toString(16).padStart(4, '0');
+    const m = /^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(String(u));
+    return m ? m[1].toLowerCase() : null;
   }
 
   function resize() {
@@ -159,448 +239,859 @@ const METERS_TO_FEET = 3.28084;
 
   function estimateDistance(rssi, tx, n) {
     const d = Math.pow(10, (tx - rssi) / (10 * n));
-    return Math.max(0.5, Math.min(130, d)); // meters, then convert later
+    return Math.max(0.3, Math.min(130, d)); // meters
   }
 
-  function makeDevice(id, name, type, mac, raw) {
+  // ---------- favorites (by id, survive mode switches) ----------
+  let favIds = new Set();
+  try { favIds = new Set(JSON.parse(localStorage.getItem('nexus-ble-favs') || '[]')); } catch (e) {}
+  function saveFavs() { try { localStorage.setItem('nexus-ble-favs', JSON.stringify([...favIds])); } catch (e) {} }
+
+  function makeDevice(id, name, type, mac, raw, angle) {
     return {
       id, name, type, mac,
-      angle: Math.random() * Math.PI * 2,
+      angle: angle ?? Math.random() * Math.PI * 2,
+      dirKnown: !realRadio,          // practice dots have a (pretend) direction
       rawRssi: raw,
       filteredRssi: raw,
       kf: new KalmanFilter({ R: 0.01, Q: kalmanQ }),
-      txPower: defaultTx + (Math.random()-0.5)*6,
+      txPower: defaultTx + (Math.random() - 0.5) * 6,
+      measured1m: null,
       distanceM: 1,
       history: [],
+      samples: [],                   // {t, v} for warmer/colder trend
       trail: [],
+      bear: new Array(24).fill(null),// RSSI by compass heading (15° buckets)
       lastSeen: Date.now(),
-      favorite: false,
+      firstSeen: Date.now(),
+      count: 0,
+      favorite: favIds.has(id),
+      vendor: '', tags: [], tech: '',
+      unit: 'dBm',                   // 'dBm' or 'link' (Bluefy link-quality score)
       hex: '0x' + Math.abs(Math.round(raw)).toString(16).toUpperCase()
     };
   }
 
   function seedSim() {
-    for (let i = 0; i < 5; i++) {
-      const type = TYPES[Math.floor(Math.random()*TYPES.length)];
-      const name = NAMES[type][Math.floor(Math.random()*NAMES[type].length)];
-      const mac = Array.from({length:6},()=>Math.floor(Math.random()*256).toString(16).padStart(2,'0').toUpperCase()).join(':');
-      const d = makeDevice(mac, name, type, mac, -50 - Math.random()*35);
-      devices.set(d.id, d);
-    }
+    for (let i = 0; i < 5; i++) addSimDevice(-50 - Math.random() * 35);
   }
-  seedSim();
+  function addSimDevice(raw) {
+    const type = TYPES[Math.floor(Math.random() * TYPES.length)];
+    const name = NAMES[type][Math.floor(Math.random() * NAMES[type].length)];
+    const mac = Array.from({length: 6}, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0').toUpperCase()).join(':');
+    const d = makeDevice(mac, name, type, mac, raw);
+    d.tech = 'PRACTICE · made-up device';
+    devices.set(d.id, d);
+  }
 
-  function loadFavs() {
+  // ---------- advertisement decoding (live) ----------
+  const VENDORS = {
+    0x004C: 'Apple', 0x0006: 'Microsoft', 0x0075: 'Samsung', 0x00E0: 'Google', 0x0087: 'Garmin',
+    0x0059: 'Nordic Semi', 0x000D: 'Texas Instruments', 0x02E5: 'Espressif', 0x0499: 'Ruuvi',
+    0x038F: 'Xiaomi', 0x012D: 'Sony', 0x009E: 'Bose', 0x006B: 'Polar', 0x0171: 'Amazon',
+    0x01AB: 'Meta', 0x01DA: 'Logitech', 0x0057: 'Harman (JBL)', 0x0310: 'SGL Italia', 0x0002: 'Intel',
+    0x000F: 'Broadcom', 0x001D: 'Qualcomm', 0x0131: 'Cypress', 0x0822: 'adafruit'
+  };
+  const SERVICES = {
+    'feaa': ['BEACON', 'Eddystone beacon'], 'fd6f': ['PHONE', 'Exposure Notification'],
+    '180d': ['WEARABLE', 'Heart rate'], '1814': ['WEARABLE', 'Running speed'],
+    'fe2c': ['AUDIO', 'Google Fast Pair'], 'feed': ['TRACKER', 'Tile'], 'feec': ['TRACKER', 'Tile'],
+    'fd84': ['TRACKER', 'Tile'], 'fd5a': ['TRACKER', 'Samsung SmartTag'], 'fe9f': [null, 'Google'],
+    '1812': ['INPUT', 'Keyboard/mouse (HID)'], '181a': ['SENSOR', 'Environmental sensor'],
+    '1809': ['SENSOR', 'Thermometer'], '1816': ['SENSOR', 'Cycling speed/cadence'],
+    '1818': ['SENSOR', 'Cycling power'], 'fe95': ['SENSOR', 'Xiaomi MiBeacon'],
+    'fcd2': ['SENSOR', 'BTHome sensor'], '180f': [null, 'Battery'], '184e': ['AUDIO', 'LE Audio']
+  };
+  const APPLE_TYPES = {
+    0x02: ['BEACON', 'iBeacon'], 0x05: ['PHONE', 'AirDrop'], 0x07: ['AUDIO', 'AirPods/Beats'],
+    0x09: [null, 'AirPlay'], 0x0C: ['PHONE', 'Handoff'], 0x0F: ['PHONE', 'Nearby Action'],
+    0x10: ['PHONE', 'Apple Nearby (iPhone/iPad/Mac/Watch)'], 0x12: ['TRACKER', 'Find My (AirTag or Find My gear)']
+  };
+  function guessFromName(n) {
+    if (/airpods|buds|beats|bose|jbl|sony wh|wf-|headphone|speaker|soundcore|jabra/i.test(n)) return 'AUDIO';
+    if (/watch|band|fitbit|garmin|whoop|oura|amazfit|mi band/i.test(n)) return 'WEARABLE';
+    if (/iphone|pixel|galaxy s|phone|oneplus|moto/i.test(n)) return 'PHONE';
+    if (/tile|airtag|tag|chipolo|tracker/i.test(n)) return 'TRACKER';
+    if (/beacon/i.test(n)) return 'BEACON';
+    if (/macbook|laptop|pc|desktop|surface|imac/i.test(n)) return 'COMPUTER';
+    if (/keyboard|mouse|mx |controller|gamepad|remote/i.test(n)) return 'INPUT';
+    if (/tv|roku|chromecast|fire ?tv/i.test(n)) return 'TV';
+    if (/sensor|thermo|temp|ruuvi|hygro|govee|switchbot/i.test(n)) return 'SENSOR';
+    return null;
+  }
+  function decodeAdv(ev) {
+    const out = { name: (ev.device && ev.device.name) || ev.name || '', type: null, vendor: '', tags: [], lines: [], measured1m: null };
+    const setType = t => { if (t && !out.type) out.type = t; };
     try {
-      JSON.parse(localStorage.getItem('nexus-ble-favs')||'[]').forEach(id => {
-        const d = devices.get(id); if (d) d.favorite = true;
+      if (ev.manufacturerData) ev.manufacturerData.forEach((dv, cid) => {
+        const v = VENDORS[cid];
+        if (v && !out.vendor) out.vendor = v;
+        out.lines.push(`maker 0x${Number(cid).toString(16).padStart(4, '0')}${v ? ' ' + v : ''}: ${hexOf(dv)}`);
+        if (cid === 0x004C && dv.byteLength >= 1) {
+          const at = APPLE_TYPES[dv.getUint8(0)];
+          if (at) { setType(at[0]); out.tags.push(at[1]); }
+          if (dv.getUint8(0) === 0x02 && dv.byteLength >= 23) out.measured1m = dv.getInt8(22);
+        }
+        if (cid === 0x0006) setType('COMPUTER');
       });
-    } catch(e){}
-  }
-  function saveFavs() {
-    localStorage.setItem('nexus-ble-favs', JSON.stringify(
-      Array.from(devices.values()).filter(d=>d.favorite).map(d=>d.id)
-    ));
-  }
-  loadFavs();
-
-  async function startScan() {
-    if (!navigator.bluetooth) { setStatus('● Practice Mode · no real radio here', true); scanning = true; return; }
-    try {
-      setStatus('● Asking for permission to look…', false);
-      bleScan = await navigator.bluetooth.requestLEScan({ acceptAllAdvertisements: true, keepRepeatedDevices: true });
-      realRadio = true; scanning = true;
-      setStatus('● Live · listening for nearby Bluetooth', false);
-      navigator.bluetooth.addEventListener('advertisementreceived', onAdv);
-    } catch (e) {
-      realRadio = false; scanning = true;
-      setStatus('● Practice Mode · permission not given', true);
-    }
-  }
-  function stopScan() {
-    if (bleScan?.active) bleScan.stop();
-    scanning = false; realRadio = false;
-    setStatus('● Stopped', true);
+      if (ev.serviceData) ev.serviceData.forEach((dv, key) => {
+        const s = uuid16(key);
+        const sv = s && SERVICES[s];
+        if (sv) { setType(sv[0]); out.tags.push(sv[1]); }
+        out.lines.push(`service ${s || key}: ${hexOf(dv)}`);
+        if (s === 'feaa' && dv.byteLength >= 2 && (dv.getUint8(0) === 0x00 || dv.getUint8(0) === 0x10)) out.measured1m = dv.getInt8(1) - 41; // Eddystone tx@0m → @1m
+      });
+      (ev.uuids || []).forEach(u => {
+        const s = uuid16(u); const sv = s && SERVICES[s];
+        if (sv) { setType(sv[0]); if (!out.tags.includes(sv[1])) out.tags.push(sv[1]); }
+      });
+    } catch (e) { /* malformed packet — ignore the extras */ }
+    if (out.name) setType(guessFromName(out.name));
+    out.tags = [...new Set(out.tags)];
+    return out;
   }
 
-  function onAdv(event) {
-    const id = event.device.id;
-    const name = event.device.name || 'Unknown Device';
-    const raw = event.rssi;
-    const tx = event.txPower ?? defaultTx;
-    let dev = devices.get(id);
-    if (!dev) {
-      dev = makeDevice(id, name, 'UNKNOWN', id.slice(0,17), raw);
-      devices.set(id, dev);
-    }
+  // ---------- feeding real readings ----------
+  function feed(dev, raw, now) {
     dev.rawRssi = raw;
     dev.filteredRssi = dev.kf.filter(raw);
-    dev.txPower = tx;
-    dev.lastSeen = Date.now();
-    dev.distanceM = estimateDistance(dev.filteredRssi, dev.txPower, pathLossN);
+    dev.lastSeen = now;
+    dev.count++;
+    const ref = dev.measured1m ?? defaultTx;
+    dev.distanceM = estimateDistance(dev.filteredRssi, ref, pathLossN);
     dev.history.push(dev.filteredRssi);
     if (dev.history.length > 40) dev.history.shift();
-    const maxDist = 30;
-    const dn = Math.min(1, dev.distanceM / maxDist);
-    dev.trail.push({ x: Math.cos(dev.angle)*R*dn, y: Math.sin(dev.angle)*R*dn, t: Date.now() });
+    dev.samples.push({ t: now, v: dev.filteredRssi });
+    while (dev.samples.length && now - dev.samples[0].t > 12000) dev.samples.shift();
+    // direction by turning in a circle (your body blocks signal from behind you)
+    if (heading != null) {
+      const b = Math.round(heading / 15) % 24;
+      dev.bear[b] = dev.bear[b] == null ? raw : dev.bear[b] * 0.6 + raw * 0.4;
+      const est = estimateBearing(dev);
+      if (est != null) { dev.angle = est * Math.PI / 180; dev.dirKnown = true; }
+    }
+    const dn = Math.min(1, dev.distanceM / 30);
+    const p = polar(dev.angle, R * dn);
+    dev.trail.push({ x: p.x, y: p.y, t: now });
     if (dev.trail.length > 12) dev.trail.shift();
   }
+  function estimateBearing(dev) {
+    const filled = dev.bear.map((v, i) => v == null ? null : i).filter(i => i != null);
+    if (filled.length < 8) return null; // need ~120° of turning
+    const vals = filled.map(i => dev.bear[i]);
+    if (Math.max(...vals) - Math.min(...vals) < 4) return null; // no clear strong side
+    let best = null, bestScore = -Infinity;
+    for (const i of filled) { // smooth with neighbours
+      const nb = [-1, 0, 1].map(k => dev.bear[(i + k + 24) % 24]).filter(v => v != null);
+      const s = nb.reduce((a, b) => a + b, 0) / nb.length;
+      if (s > bestScore) { bestScore = s; best = i; }
+    }
+    return best * 15;
+  }
+  function bearingProgress(dev) { return dev.bear.filter(v => v != null).length; }
 
-  function setStatus(text, isSim) {
-    const el = document.getElementById('status-line');
-    el.textContent = text;
-    el.className = isSim ? 'text-[#ffcc00] glow font-bold' : 'text-[#00ff87] glow font-bold';
+  function onAdv(ev) {
+    if (!realRadio || !ev || !ev.device) return;
+    if (seenEvents.has(ev)) return; // same event seen via device + navigator
+    seenEvents.add(ev);
+    const raw = ev.rssi;
+    if (typeof raw !== 'number' || !isFinite(raw) || raw >= 20 || raw < -127) return;
+    const now = Date.now();
+    const id = ev.device.id;
+    const info = decodeAdv(ev);
+    let dev = devices.get(id);
+    if (!dev) {
+      dev = makeDevice(id, info.name || 'Unknown Device', info.type || 'UNKNOWN', String(id).slice(0, 12) + (String(id).length > 12 ? '…' : ''), raw, hashAngle(id));
+      dev.dirKnown = false;
+      dev.txPower = null;
+      devices.set(id, dev);
+    }
+    if (info.name && dev.name !== info.name) dev.name = info.name;
+    if (info.type && (dev.type === 'UNKNOWN' || dev.type === 'PHONE')) dev.type = info.type;
+    if (info.vendor) dev.vendor = info.vendor;
+    if (info.tags.length) dev.tags = info.tags;
+    if (info.measured1m != null) dev.measured1m = info.measured1m;
+    else if (typeof ev.txPower === 'number' && isFinite(ev.txPower) && ev.txPower < 30) dev.measured1m = clamp(Math.round(ev.txPower - 41), -70, -45); // tx@0m → @1m, kept sane (many devices misreport)
+    dev.tech = [
+      'LIVE · real Bluetooth broadcast',
+      dev.vendor ? 'Maker: ' + dev.vendor : 'Maker: not announced',
+      dev.tags.length ? 'Looks like: ' + dev.tags.join(', ') : '',
+      dev.measured1m != null ? `Announced strength @1m: ${dev.measured1m} dBm` : `Strength @1m not announced (using ${defaultTx})`,
+      ...info.lines
+    ].filter(Boolean).join('\n');
+    feed(dev, raw, now);
+  }
+  if (CAP.bt) {
+    try { navigator.bluetooth.addEventListener('advertisementreceived', onAdv); } catch (e) {}
+    try {
+      navigator.bluetooth.getAvailability && navigator.bluetooth.getAvailability().then(a => { btAvailable = a; renderHelp(); }).catch(() => {});
+      navigator.bluetooth.addEventListener && navigator.bluetooth.addEventListener('availabilitychanged', e => { btAvailable = !!e.value; renderHelp(); });
+    } catch (e) {}
   }
 
+  // ---------- mode switching ----------
+  function setBadge() {
+    const b = $('mode-badge');
+    b.textContent = realRadio ? 'LIVE' : 'PRACTICE';
+    b.className = 'badge ' + (realRadio ? 'live' : 'practice');
+    $('btn-practice').classList.toggle('hidden', !realRadio);
+    $('btn-scan').classList.toggle('live', realRadio && scanning);
+    $('btn-stop').classList.toggle('opacity-50', !scanning);
+    $('help-mode-note').textContent = $('footnote').textContent = realRadio
+      ? 'LIVE: real Bluetooth signals. Distance is a rough guess from signal strength (walls, bodies and pockets change it a lot). Direction is unknown until you turn slowly in a full circle with COMPASS on — hollow dots = direction not known yet. Feet shown.'
+      : 'PRACTICE: these are made-up devices so you can learn the app. Distance is a rough guess from how strong the Bluetooth signal is. Direction is estimated (real phones can\'t tell exact angle without special antennas). Feet shown.';
+  }
+  function beginLive(kind) {
+    if (!realRadio) {
+      devices.clear();
+      selectedId = null;
+      if (viewMode === 'walk') toggleWalk();
+    }
+    realRadio = true; liveKind = kind; scanning = true;
+    requestWakeLock();
+    resumePicked();
+    setStatus(kind === 'scan' ? '● LIVE · listening for nearby Bluetooth' : '● LIVE · tracking the device(s) you picked', 'live');
+    if (kind === 'pick' && !CAP.scan) {
+      showHint(CAP.bluefy
+        ? 'Live in Bluefy: you pick devices one at a time (Bluefy can\'t list everything around you). If a device can\'t give a signal reading, NEXUS measures how easily it connects instead — shown as “link %”, not dBm. Works best with earbuds, tags, bands and sensors; other phones usually refuse.'
+        : 'Live, one device at a time. To see everything nearby, turn on chrome://flags/#enable-experimental-web-platform-features and relaunch.',
+        ['pick', 'compass', 'help']);
+    } else if (CAP.orientation && heading == null) {
+      showHint('Tip: tap COMPASS, hold your phone flat at your chest and turn slowly in a full circle. The direction where a device is strongest is (roughly) where it is.', ['compass']);
+    } else hideHint();
+    setBadge();
+  }
+  function enterPractice(reason, actions) {
+    stopRadio();
+    if (realRadio || devices.size === 0) { devices.clear(); selectedId = null; seedSim(); }
+    realRadio = false; liveKind = null; scanning = true;
+    if (viewMode === 'walk') toggleWalk();
+    setStatus(reason ? '● Practice Mode · no real radio here' : '● Practice Mode · looking for signals', 'sim');
+    if (reason) showHint(reason, actions || ['help']); else hideHint();
+    setBadge();
+  }
+  function noLiveReason() {
+    if (!CAP.bt) {
+      if (CAP.iOS) return ['This iPhone browser can\'t use Bluetooth — Safari, and Chrome/Edge/Firefox on iPhone too (Apple makes them all run Safari\'s engine). To go live on your iPhone, open this page in the free Bluefy – Web BLE Browser app.', ['bluefy', 'copy', 'help']];
+      if (CAP.firefox) return ['Firefox doesn\'t support Web Bluetooth. Open this page in Chrome or Edge to go live.', ['copy', 'help']];
+      if (CAP.chromium) return ['Bluetooth is switched off for web pages in this browser. In Chrome/Edge, turn on chrome://flags/#enable-experimental-web-platform-features (Brave: brave://flags/#brave-web-bluetooth-api) and relaunch.', ['copy', 'help']];
+      return ['This browser has no Web Bluetooth. Use Chrome or Edge (Android, Windows, Mac), or Bluefy on iPhone.', ['copy', 'help']];
+    }
+    if (!CAP.secure) return ['Bluetooth only works on a secure (https://) page. Open https://antmanthepro.github.io/nexus-ble-radar/ instead.', ['copy', 'help']];
+    return null;
+  }
+
+  async function startScan() {
+    if (scanning && realRadio) return;
+    const why = noLiveReason();
+    if (why) { enterPractice(why[0], why[1]); return; }
+    if (btAvailable === false) {
+      enterPractice('Bluetooth looks turned off (or this device has none). Turn Bluetooth on, then tap START LOOKING again.' + (CAP.android ? ' On Android also turn on Location.' : ''), ['help']);
+      return;
+    }
+    if (CAP.scan) {
+      try {
+        setStatus('● Asking for permission to look…', 'wait');
+        bleScan = await navigator.bluetooth.requestLEScan({ acceptAllAdvertisements: true, keepRepeatedDevices: true });
+        beginLive('scan');
+        return;
+      } catch (e) {
+        if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')) {
+          enterPractice('Permission not given, so no real radio. Tap START LOOKING again and choose Allow.' + (CAP.android ? ' On Android, Chrome also needs Location + “Nearby devices” permission.' : ''), CAP.pick ? ['pick', 'help'] : ['help']);
+          return;
+        }
+        // scan exists but failed (flag half-on, adapter busy) → try picking one device
+      }
+    }
+    if (CAP.pick) { await pickDevice(true); return; }
+    enterPractice('This browser has Bluetooth but can\'t look for devices.', ['help']);
+  }
+
+  async function pickDevice(fromStart) {
+    if (!CAP.pick) return;
+    let bt;
+    try {
+      setStatus('● Pick a device from the list…', 'wait');
+      bt = await navigator.bluetooth.requestDevice({ acceptAllDevices: true, optionalServices: ['battery_service', 'device_information'] });
+    } catch (e) {
+      const msg = e && e.name === 'NotFoundError' ? 'No device picked (or none found).'
+        : e && e.name === 'SecurityError' ? 'The browser blocked the picker — tap + TRACK A DEVICE.'
+        : 'Couldn\'t open the device picker: ' + (e && e.message || e);
+      if (realRadio) { setStatus('● LIVE · ' + msg, 'live'); return; }
+      enterPractice(msg + ' Tap + TRACK A DEVICE to try again.', ['pick', 'help']);
+      return;
+    }
+    if (!realRadio || !scanning) beginLive(bleScan ? 'scan' : 'pick');
+    const id = bt.id;
+    let dev = devices.get(id);
+    if (!dev) {
+      dev = makeDevice(id, bt.name || 'Unnamed device', guessFromName(bt.name || '') || 'UNKNOWN', String(id).slice(0, 12) + '…', -80, hashAngle(id));
+      dev.dirKnown = false; dev.lastSeen = Date.now(); dev.picked = true;
+      devices.set(id, dev);
+    }
+    dev.bt = bt; dev.picked = true;
+    selectedId = id;
+    // Path 1: real signal strength for this device
+    if (typeof bt.watchAdvertisements === 'function') {
+      try {
+        dev.abort = typeof AbortController === 'function' ? new AbortController() : null;
+        bt.addEventListener('advertisementreceived', onAdv);
+        await bt.watchAdvertisements(dev.abort ? { signal: dev.abort.signal } : undefined);
+        dev.tech = 'LIVE · watching this device\'s broadcasts (real dBm)';
+        setStatus('● LIVE · tracking ' + dev.name, 'live');
+        return;
+      } catch (e) { /* fall through to link check */ }
+    }
+    // Path 2 (Bluefy / no RSSI): link-quality probing
+    dev.unit = 'link'; dev.succEma = 1; dev.linkScore = 0;
+    dev.tech = 'LIVE · link check: NEXUS connects and disconnects to measure how easy the link is. Score is 0–100 %, not dBm.';
+    setStatus('● LIVE · link-checking ' + dev.name, 'live');
+    linkLoop(dev);
+  }
+
+  async function linkLoop(dev) {
+    if (dev.linking) return;
+    dev.linking = true;
+    while (realRadio && scanning && devices.get(dev.id) === dev && dev.bt && dev.bt.gatt) {
+      const t0 = performance.now();
+      let ok = false;
+      try {
+        await Promise.race([dev.bt.gatt.connect(), sleep(5000).then(() => { throw new Error('timeout'); })]);
+        ok = true;
+      } catch (e) {}
+      const lat = performance.now() - t0;
+      try { dev.bt.gatt.disconnect(); } catch (e) {}
+      dev.succEma = 0.6 * dev.succEma + 0.4 * (ok ? 1 : 0);          // how often the link works
+      if (ok) { const ls = clamp(100 - (lat - 150) / 40, 5, 100);       // how fast it connects (150 ms → 100)
+        dev.latEma = dev.latEma == null ? ls : dev.latEma * 0.6 + ls * 0.4; }
+      dev.linkScore = dev.succEma * (dev.latEma ?? 0);
+      if (ok || dev.count > 0) {
+        feed(dev, -100 + dev.linkScore * 0.7, Date.now()); // 0–100 % mapped onto -100…-30 for the sparkline
+        dev.distanceM = Math.max(0.3, Math.pow(30, 1 - dev.linkScore / 100)); // very rough: 100 % ≈ touching, 0 % ≈ 100 ft+
+      }
+      dev.lastLatency = Math.round(lat);
+      await sleep(900);
+    }
+    dev.linking = false;
+  }
+
+  function resumePicked() { // after STOP → START, pick up previously picked devices again
+    devices.forEach(d => {
+      if (!d.bt) return;
+      if (d.unit === 'link') { setTimeout(() => linkLoop(d), 0); return; }
+      if (typeof d.bt.watchAdvertisements === 'function' && (!d.bt.watchingAdvertisements)) {
+        try { d.abort = typeof AbortController === 'function' ? new AbortController() : null;
+          d.bt.watchAdvertisements(d.abort ? { signal: d.abort.signal } : undefined).catch(() => {}); } catch (e) {}
+      }
+    });
+  }
+  function stopRadio() {
+    try { if (bleScan && bleScan.active) bleScan.stop(); } catch (e) {}
+    bleScan = null;
+    devices.forEach(d => { try { d.abort && d.abort.abort(); } catch (e) {} try { d.bt && d.bt.gatt && d.bt.gatt.connected && d.bt.gatt.disconnect(); } catch (e) {} });
+    releaseWakeLock();
+  }
+  function stopScan() {
+    stopRadio();
+    scanning = false;
+    setStatus(realRadio ? '● LIVE stopped · last readings kept' : '● Stopped', 'sim');
+    setBadge();
+  }
+
+  // ---------- compass ----------
+  function onOrient(e) {
+    let h = null;
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) h = e.webkitCompassHeading;
+    else if (e.absolute && typeof e.alpha === 'number') h = 360 - e.alpha;
+    if (h == null) return;
+    const so = (screen.orientation && typeof screen.orientation.angle === 'number') ? screen.orientation.angle : (window.orientation || 0);
+    heading = ((h + so) % 360 + 360) % 360;
+  }
+  let compassOn = false;
+  async function enableCompass() {
+    if (!CAP.orientation) { setStatus('● No compass on this device', realRadio ? 'live' : 'sim'); return; }
+    try {
+      if (CAP.orientationNeedsPermission) {
+        const r = await DeviceOrientationEvent.requestPermission();
+        if (r !== 'granted') { setStatus('● Compass permission not given', realRadio ? 'live' : 'sim'); return; }
+      }
+      if (!compassOn) {
+        window.addEventListener('deviceorientationabsolute', onOrient);
+        window.addEventListener('deviceorientation', onOrient);
+        compassOn = true; if (realRadio) hideHint();
+      }
+      $('btn-compass').classList.add('active');
+      setTimeout(() => { if (heading == null) setStatus('● Compass on, but no heading yet — move the phone in a figure 8', realRadio ? 'live' : 'sim'); }, 2500);
+    } catch (e) { setStatus('● Compass not available here', realRadio ? 'live' : 'sim'); }
+  }
+
+  // ---------- wake lock ----------
+  async function requestWakeLock() {
+    try { if ('wakeLock' in navigator && !wakeLock) { wakeLock = await navigator.wakeLock.request('screen'); wakeLock.addEventListener('release', () => { wakeLock = null; }); } } catch (e) {}
+  }
+  function releaseWakeLock() { try { wakeLock && wakeLock.release(); } catch (e) {} wakeLock = null; }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && realRadio && scanning) requestWakeLock(); });
+
+  // ---------- status / hint / help ----------
+  function setStatus(text, kind) {
+    const el = $('status-line');
+    el.textContent = text;
+    const color = kind === 'live' ? '#00ff87' : kind === 'wait' ? '#60efff' : '#ffcc00';
+    el.className = 'glow font-bold';
+    el.style.color = color;
+  }
+  const HINT_BTNS = {
+    bluefy: ['GET BLUEFY (APP STORE)', () => window.open('https://apps.apple.com/app/id1492822055', '_blank', 'noopener')],
+    copy: ['COPY LINK', async () => {
+      const url = 'https://antmanthepro.github.io/nexus-ble-radar/';
+      try { await navigator.clipboard.writeText(url); setStatus('● Link copied — paste it into Bluefy / Chrome', 'wait'); }
+      catch (e) { prompt('Copy this link:', url); }
+    }],
+    pick: ['+ TRACK A DEVICE', () => pickDevice(false)],
+    compass: ['COMPASS', () => enableCompass()],
+    help: ['HOW TO GO LIVE', () => openHelp()]
+  };
+  function showHint(text, actions) {
+    $('hint-text').textContent = text;
+    const box = $('hint-actions');
+    box.innerHTML = '';
+    (actions || []).filter(a => HINT_BTNS[a]).filter(a => a !== 'pick' || CAP.pick).filter(a => a !== 'compass' || CAP.orientation).forEach(a => {
+      const b = document.createElement('button');
+      b.className = 'mode-btn px-2 py-1 text-[10px] rounded';
+      b.textContent = HINT_BTNS[a][0];
+      b.onclick = () => { if (a === 'compass' || a === 'help') hideHint(); HINT_BTNS[a][1](); };
+      box.appendChild(b);
+    });
+    const x = document.createElement('button');
+    x.className = 'mode-btn px-2 py-1 text-[10px] rounded text-gray-500';
+    x.textContent = 'HIDE';
+    x.onclick = hideHint;
+    box.appendChild(x);
+    $('live-hint').classList.remove('hidden');
+  }
+  function hideHint() { $('live-hint').classList.add('hidden'); }
+  function renderHelp() {
+    const yes = '<span class="text-[#00ff87]">YES</span>', no = '<span class="text-[#ff0080]">NO</span>', maybe = '<span class="text-[#ffcc00]">?</span>';
+    const rows = [
+      ['Web Bluetooth', CAP.bt ? yes : no, CAP.bt ? (CAP.bluefy ? 'Bluefy (or another iOS BLE browser)' : 'available') : (CAP.iOS ? 'iPhone browsers don\'t have it — use Bluefy' : 'use Chrome/Edge')],
+      ['Secure page (https)', CAP.secure ? yes : no, CAP.secure ? '' : 'Bluetooth needs https://'],
+      ['Bluetooth radio on', btAvailable === true ? yes : btAvailable === false ? no : maybe, btAvailable == null ? 'not reported' : ''],
+      ['See everything nearby', CAP.scan ? yes : no, CAP.scan ? 'requestLEScan' : (CAP.bt && CAP.chromium ? 'needs the experimental flag' : 'not in this browser')],
+      ['Pick one device', CAP.pick ? yes : no, CAP.pick ? 'requestDevice' : ''],
+      ['Live dBm for picked device', CAP.watch ? yes : (CAP.pick ? maybe : no), CAP.watch ? 'watchAdvertisements' : (CAP.pick ? 'checked after you pick — falls back to link %' : '')],
+      ['Compass', CAP.orientation ? (heading != null ? yes : maybe) : no, CAP.orientation ? (heading != null ? Math.round(heading) + '°' : 'tap COMPASS') : ''],
+    ];
+    $('cap-table').innerHTML = rows.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td class="text-gray-400">${esc(r[2])}</td></tr>`).join('');
+    const v = noLiveReason();
+    $('help-verdict').textContent = realRadio ? 'You are LIVE right now — dots are real devices.'
+      : v ? 'Live Mode isn\'t possible in this browser: ' + v[0]
+      : CAP.scan ? 'This browser can go LIVE and see everything nearby — tap START LOOKING.'
+      : CAP.pick ? 'This browser can go LIVE one device at a time — tap START LOOKING or + TRACK A DEVICE.'
+      : 'Live Mode isn\'t available here.';
+  }
+  function openHelp() { renderHelp(); $('help').classList.remove('hidden'); }
+
+  // ---------- practice simulation ----------
   function updateSim() {
     if (!scanning || realRadio) return;
     const now = Date.now();
     devices.forEach(dev => {
-      const jitter = (Math.random()-0.5) * (mode==='street'?5:2.5);
-      dev.rawRssi = Math.max(-95, Math.min(-30, dev.rawRssi + jitter*0.12));
+      const jitter = (Math.random() - 0.5) * (mode === 'street' ? 5 : 2.5);
+      dev.rawRssi = Math.max(-95, Math.min(-30, dev.rawRssi + jitter * 0.12));
       dev.filteredRssi = dev.kf.filter(dev.rawRssi);
-      dev.angle += (Math.random()-0.5)*0.006;
+      dev.angle += (Math.random() - 0.5) * 0.006;
       dev.distanceM = estimateDistance(dev.filteredRssi, dev.txPower, pathLossN);
       dev.history.push(dev.filteredRssi);
       if (dev.history.length > 40) dev.history.shift();
-      const maxDist = 30;
-      const dn = Math.min(1, dev.distanceM / maxDist);
-      dev.trail.push({ x: Math.cos(dev.angle)*R*dn, y: Math.sin(dev.angle)*R*dn, t: now });
+      dev.samples.push({ t: now, v: dev.filteredRssi });
+      while (dev.samples.length && now - dev.samples[0].t > 12000) dev.samples.shift();
+      const dn = Math.min(1, dev.distanceM / 30);
+      const p = polar(dev.angle, R * dn);
+      dev.trail.push({ x: p.x, y: p.y, t: now });
       if (dev.trail.length > 12) dev.trail.shift();
       dev.lastSeen = now;
     });
-    if (Math.random() < 0.003 && devices.size < 10) {
-      const type = TYPES[Math.floor(Math.random()*TYPES.length)];
-      const name = NAMES[type][Math.floor(Math.random()*NAMES[type].length)];
-      const mac = Array.from({length:6},()=>Math.floor(Math.random()*256).toString(16).padStart(2,'0').toUpperCase()).join(':');
-      devices.set(mac, makeDevice(mac, name, type, mac, -55-Math.random()*30));
-    }
-    for (const [id,d] of devices) if (now - d.lastSeen > 16000) devices.delete(id);
+    if (Math.random() < 0.003 && devices.size < 10) addSimDevice(-55 - Math.random() * 30);
+    for (const [id, d] of devices) if (now - d.lastSeen > 16000) devices.delete(id);
+  }
+  function pruneLive() {
+    if (!realRadio) return;
+    const now = Date.now();
+    for (const [id, d] of devices) if (!d.picked && !d.favorite && id !== selectedId && now - d.lastSeen > 90000) devices.delete(id);
+  }
+  function trend(dev) {
+    const now = Date.now();
+    const a = dev.samples.filter(s => now - s.t <= 3000), b = dev.samples.filter(s => now - s.t > 3000 && now - s.t <= 6000);
+    if (a.length < 2 || b.length < 2) return 0;
+    const avg = arr => arr.reduce((x, s) => x + s.v, 0) / arr.length;
+    const d = avg(a) - avg(b);
+    return d > 1.5 ? 1 : d < -1.5 ? -1 : 0;
   }
 
+  // ---------- drawing ----------
   function drawRadar() {
     const rect = canvas.getBoundingClientRect();
-    ctx.clearRect(0,0,rect.width,rect.height);
+    ctx.clearRect(0, 0, rect.width, rect.height);
 
-    // Range rings in feet
     ctx.strokeStyle = '#00ff8722';
     ctx.lineWidth = 1;
     ctx.font = '9px ui-monospace';
     ctx.fillStyle = '#60efff66';
-    for (let i=1;i<=4;i++) {
+    for (let i = 1; i <= 4; i++) {
       const rr = R * i / 4;
-      ctx.beginPath(); ctx.arc(CX,CY,rr,0,Math.PI*2); ctx.stroke();
-      const feet = Math.round((i/4)*100);
-      ctx.fillText(feet+' ft', CX+rr+4, CY-4);
+      ctx.beginPath(); ctx.arc(CX, CY, rr, 0, Math.PI * 2); ctx.stroke();
+      ctx.fillText(Math.round((i / 4) * 100) + ' ft', CX + rr + 4, CY - 4); // 30 m ≈ 100 ft at the edge
     }
-    // Compass cross
     ctx.beginPath();
-    ctx.moveTo(CX-R,CY); ctx.lineTo(CX+R,CY);
-    ctx.moveTo(CX,CY-R); ctx.lineTo(CX,CY+R);
+    ctx.moveTo(CX - R, CY); ctx.lineTo(CX + R, CY);
+    ctx.moveTo(CX, CY - R); ctx.lineTo(CX, CY + R);
     ctx.strokeStyle = '#60efff18'; ctx.stroke();
     ctx.fillStyle = '#60efff88';
     ctx.font = '11px ui-monospace';
-    ctx.fillText('N', CX-4, CY-R-6);
-    ctx.fillText('S', CX-4, CY+R+14);
-    ctx.fillText('E', CX+R+4, CY+4);
-    ctx.fillText('W', CX-R-16, CY+4);
+    ctx.fillText('N', CX - 4, CY - R - 6);
+    ctx.fillText('S', CX - 4, CY + R + 14);
+    ctx.fillText('E', CX + R + 4, CY + 4);
+    ctx.fillText('W', CX - R - 16, CY + 4);
 
-    // Sweep
-    const speed = mode==='eco'?0.01 : mode==='pro'?0.026 : 0.018;
-    sweep += speed;
+    // which way you're facing (live compass)
+    if (heading != null) {
+      const a = heading * Math.PI / 180;
+      ctx.save(); ctx.translate(CX, CY); ctx.rotate(a);
+      ctx.fillStyle = '#ff008022';
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, -Math.PI / 2 - 0.3, -Math.PI / 2 + 0.3); ctx.closePath(); ctx.fill();
+      ctx.restore();
+    }
+
+    const speed = mode === 'eco' ? 0.01 : mode === 'pro' ? 0.026 : 0.018;
+    if (scanning) sweep += speed;
     ctx.save();
-    ctx.translate(CX,CY); ctx.rotate(sweep);
-    const g = ctx.createLinearGradient(0,0,R,0);
-    g.addColorStop(0,'#00ff8700'); g.addColorStop(0.65,'#00ff8744'); g.addColorStop(1,'#60efff77');
+    ctx.translate(CX, CY); ctx.rotate(sweep);
+    const g = ctx.createLinearGradient(0, 0, R, 0);
+    const sc = realRadio ? ['#00ff8700', '#00ff8755', '#00ff87aa'] : ['#00ff8700', '#00ff8744', '#60efff77'];
+    g.addColorStop(0, sc[0]); g.addColorStop(0.65, sc[1]); g.addColorStop(1, sc[2]);
     ctx.fillStyle = g;
-    ctx.beginPath(); ctx.moveTo(0,0); ctx.arc(0,0,R,-0.22,0.22); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(0, 0); ctx.arc(0, 0, R, -0.22, 0.22); ctx.closePath(); ctx.fill();
     ctx.restore();
 
     if (Date.now() < pulseUntil) {
-      const t = (pulseUntil-Date.now())/700;
-      ctx.beginPath(); ctx.arc(CX,CY,R*(1-t)*0.55,0,Math.PI*2);
-      ctx.strokeStyle = `rgba(255,0,128,${t})`; ctx.lineWidth=2; ctx.stroke();
+      const t = (pulseUntil - Date.now()) / 700;
+      ctx.beginPath(); ctx.arc(CX, CY, R * (1 - t) * 0.55, 0, Math.PI * 2);
+      ctx.strokeStyle = `rgba(255,0,128,${t})`; ctx.lineWidth = 2; ctx.stroke();
     }
 
-    const maxDist = 30;
+    const fadeAfter = realRadio ? 20 : 14;
     devices.forEach(dev => {
       if (favsOnly && !dev.favorite) return;
-      const age = (Date.now()-dev.lastSeen)/1000;
-      if (age > 14) return;
-      const dn = Math.min(1, dev.distanceM / maxDist);
-      const x = CX + Math.cos(dev.angle)*R*dn;
-      const y = CY + Math.sin(dev.angle)*R*dn;
-      const alpha = Math.max(0.2, 1-age/11);
+      const age = (Date.now() - dev.lastSeen) / 1000;
+      if (age > fadeAfter && dev.id !== selectedId) return;
+      if (realRadio && dev.count === 0) return;
+      const dn = Math.min(1, dev.distanceM / 30);
+      const p = polar(dev.angle, R * dn);
+      const x = CX + p.x, y = CY + p.y;
+      const alpha = Math.max(0.2, 1 - age / (fadeAfter * 0.8));
       const isSel = dev.id === selectedId;
       const size = isSel ? 7 : (dev.favorite ? 5.5 : 4);
+      const col = dev.favorite ? '#ffcc00' : (isSel ? '#60efff' : '#00ff87');
 
-      if (showTrails && dev.trail.length > 1) {
+      if (showTrails && dev.trail.length > 1 && dev.dirKnown) {
         ctx.beginPath();
         ctx.strokeStyle = dev.favorite ? '#ffcc0066' : '#00ff8755';
         ctx.lineWidth = 1.2;
-        dev.trail.forEach((p,i) => {
-          const px = CX + p.x, py = CY + p.y;
-          i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
-        });
+        dev.trail.forEach((p, i) => { const px = CX + p.x, py = CY + p.y; i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py); });
         ctx.stroke();
+      }
+      if (isSel && realRadio && !dev.dirKnown) { // direction unknown: show the whole distance ring
+        ctx.save(); ctx.setLineDash([4, 6]); ctx.strokeStyle = '#60efff55';
+        ctx.beginPath(); ctx.arc(CX, CY, R * dn, 0, Math.PI * 2); ctx.stroke(); ctx.restore();
       }
 
       ctx.save();
       ctx.globalAlpha = alpha;
       ctx.shadowBlur = isSel ? 16 : 9;
-      ctx.shadowColor = dev.favorite ? '#ffcc00' : (isSel ? '#60efff' : '#00ff87');
-      ctx.fillStyle = dev.favorite ? '#ffcc00' : (isSel ? '#60efff' : '#00ff87');
-      ctx.beginPath(); ctx.arc(x,y,size,0,Math.PI*2); ctx.fill();
-      ctx.shadowBlur = 0;
-      ctx.fillStyle = '#0a0a0f';
-      ctx.beginPath(); ctx.arc(x,y,size*0.4,0,Math.PI*2); ctx.fill();
+      ctx.shadowColor = col;
+      if (dev.dirKnown) {
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+        ctx.shadowBlur = 0; ctx.fillStyle = '#0a0a0f';
+        ctx.beginPath(); ctx.arc(x, y, size * 0.4, 0, Math.PI * 2); ctx.fill();
+      } else {
+        ctx.strokeStyle = col; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.stroke();
+      }
       ctx.restore();
 
       if (isSel || dn < 0.32) {
         ctx.fillStyle = '#e5e7ebcc';
         ctx.font = '10px ui-monospace';
-        ctx.fillText(dev.name.split(' ')[0], x+8, y-5);
+        ctx.fillText(dev.name.split(' ')[0].slice(0, 16), x + 8, y - 5);
       }
     });
 
-    // Center
     ctx.fillStyle = '#ff0080';
     ctx.shadowBlur = 10; ctx.shadowColor = '#ff0080';
-    ctx.beginPath(); ctx.arc(CX,CY,3.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(CX, CY, 3.5, 0, Math.PI * 2); ctx.fill();
     ctx.shadowBlur = 0;
+
+    if (realRadio && devices.size === 0) {
+      ctx.fillStyle = '#60efffaa'; ctx.font = '12px ui-monospace'; ctx.textAlign = 'center';
+      ctx.fillText(liveKind === 'pick' ? 'Tap + TRACK A DEVICE to pick one' : (scanning ? 'Listening… real devices appear here' : 'Stopped'), CX, CY + R * 0.5);
+      ctx.textAlign = 'start';
+    }
   }
 
   function drawWalk() {
     const rect = canvas.getBoundingClientRect();
-    ctx.clearRect(0,0,rect.width,rect.height);
+    ctx.clearRect(0, 0, rect.width, rect.height);
     const sel = selectedId ? devices.get(selectedId) : null;
     if (!sel) {
-      ctx.fillStyle = '#60efff';
-      ctx.font = '14px ui-monospace';
-      ctx.fillText('Select a device first, then hit 3D Walk View', CX-120, CY);
+      ctx.fillStyle = '#60efff'; ctx.font = '14px ui-monospace'; ctx.textAlign = 'center';
+      ctx.fillText('Select a device first, then hit 3D Walk View', CX, CY);
+      ctx.textAlign = 'start';
       return;
     }
-
-    // Simple perspective ground
     const horizon = CY * 0.45;
-    ctx.fillStyle = '#0a0a0f';
-    ctx.fillRect(0,0,rect.width,rect.height);
-    // Sky
-    const sky = ctx.createLinearGradient(0,0,0,horizon);
-    sky.addColorStop(0,'#001a22');
-    sky.addColorStop(1,'#0a0a0f');
-    ctx.fillStyle = sky;
-    ctx.fillRect(0,0,rect.width,horizon);
-    // Ground
-    const ground = ctx.createLinearGradient(0,horizon,0,rect.height);
-    ground.addColorStop(0,'#0f1a12');
-    ground.addColorStop(1,'#050805');
-    ctx.fillStyle = ground;
-    ctx.fillRect(0,horizon,rect.width,rect.height-horizon);
-
-    // Grid lines
-    ctx.strokeStyle = '#00ff8733';
-    ctx.lineWidth = 1;
-    for (let i=0;i<12;i++) {
-      const y = horizon + (i*i)*1.8;
+    ctx.fillStyle = '#0a0a0f'; ctx.fillRect(0, 0, rect.width, rect.height);
+    const sky = ctx.createLinearGradient(0, 0, 0, horizon);
+    sky.addColorStop(0, '#001a22'); sky.addColorStop(1, '#0a0a0f');
+    ctx.fillStyle = sky; ctx.fillRect(0, 0, rect.width, horizon);
+    const ground = ctx.createLinearGradient(0, horizon, 0, rect.height);
+    ground.addColorStop(0, '#0f1a12'); ground.addColorStop(1, '#050805');
+    ctx.fillStyle = ground; ctx.fillRect(0, horizon, rect.width, rect.height - horizon);
+    ctx.strokeStyle = '#00ff8733'; ctx.lineWidth = 1;
+    for (let i = 0; i < 12; i++) {
+      const y = horizon + (i * i) * 1.8;
       if (y > rect.height) break;
-      ctx.beginPath();
-      ctx.moveTo(0, y);
-      ctx.lineTo(rect.width, y);
-      ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(rect.width, y); ctx.stroke();
     }
 
-    // Beacon in the distance
-    const remaining = Math.max(0, toFeet(sel.distanceM) - walkDist);
-    const progress = Math.min(1, walkDist / Math.max(1, toFeet(sel.distanceM)));
-    const beaconX = CX + Math.sin(sel.angle) * (rect.width * 0.25) * (1-progress);
-    const beaconY = horizon + (rect.height - horizon) * 0.35 * (1-progress*0.6);
+    const feet = toFeet(sel.distanceM);
+    let remaining, progress, xOff, dirText;
+    if (realRadio) {
+      remaining = feet;
+      progress = 1 - Math.min(1, sel.distanceM / 30);
+      if (sel.dirKnown && heading != null) {
+        let rel = ((sel.angle * 180 / Math.PI - heading + 540) % 360) - 180; // -180..180, 0 = straight ahead
+        xOff = clamp(rel / 90, -1, 1);
+        dirText = Math.abs(rel) < 20 ? 'Straight ahead' : (rel > 0 ? `Turn right ~${Math.round(rel)}°` : `Turn left ~${Math.round(-rel)}°`);
+      } else { xOff = 0; dirText = sel.dirKnown ? 'Toward ' + angleToDir(sel.angle) : 'Direction unknown — turn slowly in a circle'; }
+    } else {
+      remaining = Math.max(0, feet - walkDist);
+      progress = Math.min(1, walkDist / Math.max(1, feet));
+      xOff = Math.sin(sel.angle) * (1 - progress);
+      dirText = 'Heading toward: ' + angleToDir(sel.angle);
+      if (walkDist < feet) walkDist += 0.4; // auto-advance for demo feel
+    }
+    const beaconX = CX + xOff * (rect.width * 0.25);
+    const beaconY = horizon + (rect.height - horizon) * 0.35 * (1 - progress * 0.6);
     const size = 8 + progress * 40;
-
     ctx.save();
-    ctx.shadowBlur = 30;
-    ctx.shadowColor = '#00ff87';
-    ctx.fillStyle = '#00ff87';
-    ctx.beginPath();
-    ctx.arc(beaconX, beaconY, size, 0, Math.PI*2);
-    ctx.fill();
-    // Vertical light
-    ctx.strokeStyle = '#60efff';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(beaconX, beaconY);
-    ctx.lineTo(beaconX, beaconY - 40 - progress*30);
-    ctx.stroke();
+    ctx.shadowBlur = 30; ctx.shadowColor = '#00ff87'; ctx.fillStyle = '#00ff87';
+    ctx.beginPath(); ctx.arc(beaconX, beaconY, size, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#60efff'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(beaconX, beaconY); ctx.lineTo(beaconX, beaconY - 40 - progress * 30); ctx.stroke();
     ctx.restore();
 
-    // Info overlay
-    ctx.fillStyle = '#00ff87';
-    ctx.font = '13px ui-monospace';
-    ctx.fillText(sel.name, 20, 40);
-    ctx.fillStyle = '#60efff';
-    ctx.font = '12px ui-monospace';
-    ctx.fillText('About ' + Math.round(remaining) + ' feet left', 20, 60);
-    ctx.fillText('Heading toward: ' + angleToDir(sel.angle), 20, 78);
-    ctx.fillStyle = '#ffcc00';
-    ctx.fillText('WASD or arrows to walk · Esc to exit', 20, rect.height - 30);
-
-    // Auto-advance a bit for demo feel
-    if (walkDist < toFeet(sel.distanceM)) walkDist += 0.4;
+    ctx.fillStyle = '#00ff87'; ctx.font = '13px ui-monospace';
+    ctx.fillText(sel.name.slice(0, 32), 20, 40);
+    ctx.fillStyle = '#60efff'; ctx.font = '12px ui-monospace';
+    ctx.fillText((realRadio ? 'About ' + Math.round(remaining) + ' feet away' : 'About ' + Math.round(remaining) + ' feet left'), 20, 60);
+    ctx.fillText(dirText, 20, 78);
+    if (realRadio) {
+      const tr = trend(sel);
+      ctx.font = 'bold 18px ui-monospace';
+      ctx.fillStyle = tr > 0 ? '#00ff87' : tr < 0 ? '#ff0080' : '#9ca3af';
+      ctx.fillText(tr > 0 ? 'WARMER ▲' : tr < 0 ? 'COLDER ▼' : 'STEADY ●', 20, 106);
+      const age = (Date.now() - sel.lastSeen) / 1000;
+      ctx.font = '11px ui-monospace'; ctx.fillStyle = '#9ca3af';
+      ctx.fillText(age > 5 ? `No signal for ${Math.round(age)}s` : 'Signal fresh', 20, 124);
+      ctx.fillStyle = '#ffcc00'; ctx.font = '12px ui-monospace';
+      ctx.fillText('Walk for real · stop every few steps · Esc to exit', 20, rect.height - 30);
+    } else {
+      ctx.fillStyle = '#ffcc00';
+      ctx.fillText('WASD or arrows to walk · Esc to exit', 20, rect.height - 30);
+    }
   }
 
   function draw() {
-    if (viewMode === 'walk') drawWalk();
-    else drawRadar();
+    if (viewMode === 'walk') drawWalk(); else drawRadar();
     updateSim();
+    pruneLive();
     updateUI();
     requestAnimationFrame(draw);
   }
 
-  function updateUI() {
-    document.getElementById('mode-line').textContent = `VIEW: ${viewMode.toUpperCase()}`;
-    document.getElementById('target-count').textContent = `DEVICES NEARBY: ${devices.size}`;
-    document.getElementById('compass').classList.toggle('hidden', viewMode !== 'radar');
-    const list = document.getElementById('target-list');
-    const arr = Array.from(devices.values()).filter(d=>!favsOnly||d.favorite).sort((a,b)=>a.distanceM-b.distanceM);
-    list.innerHTML = arr.length ? arr.map(d=>`
-      <div class="target-row ${d.id===selectedId?'selected':''} ${d.favorite?'fav':''} p-2 rounded cursor-pointer hover:bg-white/5" data-id="${d.id}">
+  function readingText(d) { return d.unit === 'link' ? Math.round(d.linkScore || 0) + '%' : Math.round(d.filteredRssi); }
+  function updateUI(force) {
+    $('mode-line').textContent = `VIEW: ${viewMode.toUpperCase()}`;
+    const now = Date.now();
+    const fresh = Array.from(devices.values()).filter(d => !realRadio || (d.count > 0 && now - d.lastSeen < 15000));
+    $('target-count').textContent = `DEVICES NEARBY: ${fresh.length}`;
+    const sel = selectedId ? devices.get(selectedId) : null;
+    $('heading').textContent = heading != null ? `${Math.round(heading)}° ${degToDir(heading)}` : (sel && !realRadio ? angleToDir(sel.angle) : '—');
+    $('target-dir').textContent = sel ? 'TARGET: ' + (sel.dirKnown ? angleToDir(sel.angle) : 'direction unknown') : '';
+
+    if (force || now - lastListRender > 300) {
+      lastListRender = now;
+      const list = $('target-list');
+      const arr = Array.from(devices.values()).filter(d => (!favsOnly || d.favorite) && (!realRadio || d.count > 0 || d.picked)).sort((a, b) => a.distanceM - b.distanceM);
+      list.innerHTML = arr.length ? arr.map(d => {
+        const age = Math.round((now - d.lastSeen) / 1000);
+        const seen = realRadio ? (d.count === 0 ? ' · waiting…' : age > 3 ? ` · ${age}s ago` : ' · now') : '';
+        const label = d.vendor && /^Unknown/.test(d.name) ? d.vendor + ' device' : d.name;
+        return `
+      <div class="target-row ${d.id === selectedId ? 'selected' : ''} ${d.favorite ? 'fav' : ''} p-2 rounded cursor-pointer hover:bg-white/5" data-id="${esc(d.id)}">
         <div class="flex justify-between">
-          <div>
-            <div class="text-sm ${d.favorite?'text-[#ffcc00]':'text-gray-200'}">${d.name}</div>
-            <div class="text-[10px] text-gray-500">${d.type} · about ${Math.round(toFeet(d.distanceM))} ft</div>
+          <div class="min-w-0">
+            <div class="text-sm truncate ${d.favorite ? 'text-[#ffcc00]' : 'text-gray-200'}">${esc(label)}</div>
+            <div class="text-[10px] text-gray-500">${esc(d.type)} · about ${Math.round(toFeet(d.distanceM))} ft${esc(seen)}</div>
           </div>
           <div class="text-right">
-            <div class="text-[#ff0080] font-mono text-xs">${Math.round(d.filteredRssi)}</div>
-            <div class="text-[10px] text-gray-600">${d.favorite?'★':'☆'}</div>
+            <div class="text-[#ff0080] font-mono text-xs">${esc(readingText(d))}</div>
+            <div class="text-[10px] text-gray-600">${d.favorite ? '★' : '☆'}</div>
           </div>
         </div>
-      </div>`).join('') : '<div class="text-center text-xs text-gray-500 py-8">Nothing nearby yet</div>';
+      </div>`; }).join('')
+        : `<div class="text-center text-xs text-gray-500 py-8">${realRadio ? (scanning ? (liveKind === 'pick' ? 'Tap + TRACK A DEVICE to pick a real device' : 'Listening for real devices… (can take a few seconds)') : 'Live stopped') : 'Nothing nearby yet'}</div>`;
+    }
 
-    const sel = selectedId ? devices.get(selectedId) : null;
-    const det = document.getElementById('detail');
+    const det = $('detail');
     if (sel) {
       det.classList.remove('hidden');
-      document.getElementById('d-name').textContent = sel.name;
-      document.getElementById('d-type').textContent = 'Type: ' + sel.type;
-      document.getElementById('d-mac').textContent = sel.mac;
-      document.getElementById('d-dist').textContent = 'About ' + Math.round(toFeet(sel.distanceM)) + ' feet away';
-      document.getElementById('d-rssi').textContent = Math.round(sel.filteredRssi) + ' (smoothed)';
-      document.getElementById('d-raw').textContent = Math.round(sel.rawRssi);
-      document.getElementById('d-hex').textContent = sel.hex;
-      document.getElementById('d-fav').textContent = sel.favorite ? '★' : '☆';
-      document.getElementById('d-dir').textContent = angleToDir(sel.angle) + ' (estimated direction)';
-      document.getElementById('heading').textContent = angleToDir(sel.angle);
-      sctx.clearRect(0,0,320,40);
-      if (sel.history.length>1) {
+      $('d-name').textContent = sel.name;
+      $('d-type').textContent = 'Type: ' + sel.type + (sel.vendor ? ' · ' + sel.vendor : '');
+      $('d-mac').textContent = sel.mac + (realRadio ? ' (browser ID, not MAC)' : '');
+      $('d-dist').textContent = 'About ' + Math.round(toFeet(sel.distanceM)) + ' feet away';
+      $('d-rssi').textContent = sel.unit === 'link' ? Math.round(sel.linkScore || 0) + '% link (not dBm)' : Math.round(sel.filteredRssi) + ' dBm (smoothed)';
+      $('d-raw').textContent = sel.unit === 'link' ? (sel.lastLatency ? sel.lastLatency + ' ms connect' : '—') : Math.round(sel.rawRssi) + ' dBm';
+      $('d-hex').textContent = sel.tech || sel.hex;
+      $('d-fav').textContent = sel.favorite ? '★' : '☆';
+      $('d-dir').textContent = sel.dirKnown
+        ? angleToDir(sel.angle) + (realRadio ? ' (from your turn-in-a-circle)' : ' (estimated direction)')
+        : (heading == null ? 'Unknown — tap COMPASS, then turn slowly in a full circle' : `Unknown — keep turning slowly (${bearingProgress(sel)}/24 directions sampled)`);
+      sctx.clearRect(0, 0, 320, 40);
+      if (sel.history.length > 1) {
         sctx.strokeStyle = '#60efff'; sctx.lineWidth = 1.4;
         sctx.beginPath();
-        const min = Math.min(...sel.history)-2, max = Math.max(...sel.history)+2;
-        sel.history.forEach((v,i)=>{
-          const x = (i/(sel.history.length-1))*320;
-          const y = 38 - ((v-min)/(max-min))*36;
-          i===0 ? sctx.moveTo(x,y) : sctx.lineTo(x,y);
+        const min = Math.min(...sel.history) - 2, max = Math.max(...sel.history) + 2;
+        sel.history.forEach((v, i) => {
+          const x = (i / (sel.history.length - 1)) * 320;
+          const y = 38 - ((v - min) / (max - min)) * 36;
+          i === 0 ? sctx.moveTo(x, y) : sctx.lineTo(x, y);
         });
         sctx.stroke();
       }
     } else det.classList.add('hidden');
   }
 
-  document.getElementById('btn-scan').onclick = startScan;
-  document.getElementById('btn-stop').onclick = stopScan;
-  document.getElementById('btn-pulse').onclick = () => pulseUntil = Date.now()+700;
-  document.getElementById('btn-favs').onclick = () => {
-    favsOnly = !favsOnly;
-    document.getElementById('btn-favs').classList.toggle('active', favsOnly);
-  };
-  document.getElementById('btn-trails').onclick = () => {
-    showTrails = !showTrails;
-    document.getElementById('btn-trails').classList.toggle('active', showTrails);
-  };
-  document.getElementById('btn-3d').onclick = () => {
-    if (!selectedId) {
-      setStatus('● Pick a device first for Walk View', true);
-      return;
-    }
+  function toggleWalk() {
     viewMode = viewMode === 'walk' ? 'radar' : 'walk';
-    document.getElementById('btn-3d').classList.toggle('active', viewMode==='walk');
-    document.getElementById('btn-3d').textContent = viewMode==='walk' ? 'BACK TO RADAR' : '3D WALK VIEW';
+    $('btn-3d').classList.toggle('active', viewMode === 'walk');
+    $('btn-3d').textContent = viewMode === 'walk' ? 'BACK TO RADAR' : '3D WALK VIEW';
     walkDist = 0;
+  }
+
+  // ---------- wiring ----------
+  $('btn-scan').onclick = startScan;
+  $('btn-stop').onclick = stopScan;
+  $('btn-pulse').onclick = () => pulseUntil = Date.now() + 700;
+  $('btn-favs').onclick = () => { favsOnly = !favsOnly; $('btn-favs').classList.toggle('active', favsOnly); updateUI(true); };
+  $('btn-trails').onclick = () => { showTrails = !showTrails; $('btn-trails').classList.toggle('active', showTrails); };
+  $('btn-3d').onclick = () => {
+    if (!selectedId && viewMode !== 'walk') { setStatus('● Pick a device first for Walk View', realRadio ? 'live' : 'sim'); return; }
+    toggleWalk();
   };
+  $('btn-pick').onclick = () => pickDevice(false);
+  $('btn-compass').onclick = enableCompass;
+  $('btn-practice').onclick = () => enterPractice(null);
+  $('btn-help').onclick = openHelp;
+  $('mode-badge').onclick = openHelp;
+  $('help-close').onclick = () => $('help').classList.add('hidden');
+  $('help').onclick = e => { if (e.target.id === 'help') $('help').classList.add('hidden'); };
+  if (CAP.pick) $('btn-pick').classList.remove('hidden');
+  if (CAP.orientation) $('btn-compass').classList.remove('hidden');
+  if (CAP.orientation && !CAP.orientationNeedsPermission && (CAP.android || navigator.maxTouchPoints > 0)) enableCompass(); // Android: no prompt needed
 
   document.querySelectorAll('[data-mode]').forEach(btn => {
     btn.onclick = () => {
       mode = btn.dataset.mode;
-      document.querySelectorAll('[data-mode]').forEach(b=>b.classList.remove('active'));
+      document.querySelectorAll('[data-mode]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      document.getElementById('pro-tools').classList.toggle('hidden', mode!=='pro');
-      if (mode==='street') pathLossN=2.0;
-      else if (mode==='precision') pathLossN=2.5;
-      else if (mode==='eco') pathLossN=2.2;
-      document.getElementById('n-slider').value = pathLossN;
-      document.getElementById('n-val').textContent = pathLossN.toFixed(1);
+      $('pro-tools').classList.toggle('hidden', mode !== 'pro');
+      if (mode === 'street') pathLossN = 2.0;
+      else if (mode === 'precision') pathLossN = 2.5;
+      else if (mode === 'eco') pathLossN = 2.2;
+      $('n-slider').value = pathLossN;
+      $('n-val').textContent = pathLossN.toFixed(1);
     };
   });
+  $('n-slider').oninput = e => { pathLossN = +e.target.value; $('n-val').textContent = pathLossN.toFixed(1); };
+  $('tx-slider').oninput = e => { defaultTx = +e.target.value; $('tx-val').textContent = defaultTx; };
+  $('q-slider').oninput = e => { kalmanQ = +e.target.value; $('q-val').textContent = kalmanQ.toFixed(1); devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ)); };
 
-  document.getElementById('n-slider').oninput = e => {
-    pathLossN = +e.target.value;
-    document.getElementById('n-val').textContent = pathLossN.toFixed(1);
-  };
-  document.getElementById('tx-slider').oninput = e => {
-    defaultTx = +e.target.value;
-    document.getElementById('tx-val').textContent = defaultTx;
-  };
-  document.getElementById('q-slider').oninput = e => {
-    kalmanQ = +e.target.value;
-    document.getElementById('q-val').textContent = kalmanQ.toFixed(1);
-    devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ));
-  };
-
-  document.getElementById('btn-export').onclick = () => {
+  $('btn-export').onclick = () => {
     const state = {
-      mode, pathLossN, defaultTx, kalmanQ, realRadio,
-      devices: Array.from(devices.values()).map(d=>({
-        name:d.name, type:d.type, id:d.mac,
-        strength: Math.round(d.filteredRssi),
+      app: 'NEXUS BLE Radar ' + NEXUS_VERSION, savedAt: new Date().toISOString(),
+      live: realRadio, liveKind, mode, pathLossN, defaultTx, kalmanQ,
+      devices: Array.from(devices.values()).map(d => ({
+        name: d.name, type: d.type, id: d.mac, maker: d.vendor || undefined, looksLike: d.tags.length ? d.tags : undefined,
+        strength: d.unit === 'link' ? Math.round(d.linkScore || 0) + '% link' : Math.round(d.filteredRssi),
         aboutFeet: Math.round(toFeet(d.distanceM)),
-        direction: angleToDir(d.angle),
+        direction: d.dirKnown ? angleToDir(d.angle) : 'unknown',
+        lastSeen: new Date(d.lastSeen).toISOString(),
         saved: d.favorite
       }))
     };
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([JSON.stringify(state,null,2)],{type:'application/json'}));
-    a.download = 'nearby-devices.json';
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(state, null, 2)], {type: 'application/json'}));
+    a.download = realRadio ? 'nearby-devices-live.json' : 'nearby-devices-practice.json';
     a.click();
   };
 
-  document.getElementById('target-list').onclick = e => {
+  $('target-list').onclick = e => {
     const row = e.target.closest('[data-id]');
-    if (row) selectedId = row.dataset.id;
+    if (row) { selectedId = row.dataset.id; updateUI(true); }
   };
-  document.getElementById('d-fav').onclick = () => {
+  $('d-fav').onclick = () => {
     const sel = devices.get(selectedId);
-    if (sel) { sel.favorite = !sel.favorite; saveFavs(); }
+    if (!sel) return;
+    sel.favorite = !sel.favorite;
+    sel.favorite ? favIds.add(sel.id) : favIds.delete(sel.id);
+    saveFavs(); updateUI(true);
   };
 
   document.addEventListener('keydown', e => {
-    if (e.key===' ') { e.preventDefault(); scanning ? stopScan() : startScan(); }
-    if (e.key==='f'||e.key==='F') document.getElementById('btn-favs').click();
-    if (e.key==='t'||e.key==='T') document.getElementById('btn-trails').click();
-    if (e.key==='3' || e.key==='v' || e.key==='V') document.getElementById('btn-3d').click();
-    if (e.key==='Escape') {
-      if (viewMode==='walk') document.getElementById('btn-3d').click();
+    if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName)) return;
+    if (e.key === ' ') { e.preventDefault(); scanning ? stopScan() : startScan(); }
+    if (e.key === 'f' || e.key === 'F') $('btn-favs').click();
+    if (e.key === 't' || e.key === 'T') $('btn-trails').click();
+    if (e.key === '3' || e.key === 'v' || e.key === 'V') $('btn-3d').click();
+    if (e.key === 'l' || e.key === 'L') openHelp();
+    if (e.key === 'Escape') {
+      if (!$('help').classList.contains('hidden')) $('help').classList.add('hidden');
+      else if (viewMode === 'walk') $('btn-3d').click();
       else selectedId = null;
     }
-    // Walk controls
-    if (viewMode==='walk') {
+    if (viewMode === 'walk' && !realRadio) {
       const step = 2.5; // feet
-      if (e.key==='w' || e.key==='W' || e.key==='ArrowUp') walkDist += step;
-      if (e.key==='s' || e.key==='S' || e.key==='ArrowDown') walkDist = Math.max(0, walkDist - step);
+      if (e.key === 'w' || e.key === 'W' || e.key === 'ArrowUp') walkDist += step;
+      if (e.key === 's' || e.key === 'S' || e.key === 'ArrowDown') walkDist = Math.max(0, walkDist - step);
     }
   });
 
-  draw();
+  // ---------- boot (always starts in honest Practice Mode) ----------
+  seedSim();
   scanning = true;
-  setStatus('● Practice Mode · looking for signals', true);
+  setBadge();
+  draw();
+  const why = noLiveReason();
+  if (why) {
+    setStatus('● Practice Mode · no real radio here', 'sim');
+    showHint(why[0], why[1]);
+  } else {
+    setStatus('● Practice Mode · tap START LOOKING to go live', 'sim');
+  }
+  renderHelp();
+  window.__nexus = { CAP, devices, state: () => ({ realRadio, liveKind, scanning, heading, selectedId }) }; // debug hook
 })();
 </script>
 </body>
