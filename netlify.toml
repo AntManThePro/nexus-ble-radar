@@ -1,0 +1,13 @@
+# NEXUS BLE Tactical Radar — Netlify config (candidate, not pushed yet)
+# Single-file static site: no build step, publish the repo root.
+[build]
+  publish = "."
+
+# Don't let browsers / Netlify cache a stale index.html after a new push.
+# This is the file that matters: a cached old radar is the exact bug
+# the v4.0.2 -> v4.1.0 update would otherwise hit on repeat visits.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+    X-Content-Type-Options = "nosniff"

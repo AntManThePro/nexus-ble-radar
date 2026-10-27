@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.0.2</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.0.2 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.0</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.0 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0f' stroke='%2300ff87' stroke-width='1.5'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%2360efff' stroke-width='1.2'/%3E%3Cpath d='M20 42 L32 14 L44 42 M25.5 32 H38.5' fill='none' stroke='%2300ff87' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3.2' fill='%23ff0080'/%3E%3C/svg%3E">
 <style>
@@ -88,7 +88,7 @@ button,input{font-family:inherit}
 .card{border:1px solid var(--line);border-radius:8px;padding:.65rem;background:#0f0f16;margin-top:.6rem}
 .card h3{margin:0 0 .4rem;font-size:.66rem;letter-spacing:.14em;color:var(--c);display:flex;justify-content:space-between;align-items:center;gap:.4rem}
 .kv{display:grid;grid-template-columns:1fr 1fr;gap:.45rem .7rem;font-size:.62rem;color:var(--mut)}
-.kv div>span{display:block;color:var(--txt);font-size:.74rem;margin-top:.1rem;word-break:break-all}
+.kv div>span{display:block;color:var(--txt);font-size:.74rem;margin-top:.1rem;overflow-wrap:anywhere}
 .mono{font-family:inherit}
 .y{color:var(--y)!important}.g{color:var(--g)!important}.c{color:var(--c)!important}.p{color:var(--p)!important}.m{color:var(--mut)!important}
 .note{font-size:.62rem;color:var(--mut);line-height:1.45;margin:.4rem 0 0}
@@ -96,7 +96,7 @@ button,input{font-family:inherit}
 .nick input{flex:1;min-width:0;background:#000;border:1px solid #ffffff22;color:var(--txt);border-radius:6px;padding:.5rem;font-size:.75rem;min-height:40px}
 canvas.spark{width:100%;height:64px;display:block;background:#00000066;border-radius:6px}
 table.dec{width:100%;border-collapse:collapse;font-size:.62rem;table-layout:fixed}
-table.dec td{border-top:1px solid #ffffff10;padding:.32rem .2rem;vertical-align:top;word-break:break-all}
+table.dec td{border-top:1px solid #ffffff10;padding:.32rem .2rem;vertical-align:top;overflow-wrap:anywhere}
 table.dec td:first-child{color:var(--mut);width:34%}
 .meter{height:22px;border-radius:999px;background:linear-gradient(90deg,#60efff,#00ff87,#ffcc00,#ff0080);position:relative;margin:.5rem 0 .2rem;opacity:.9}
 .meter .needle{position:absolute;top:-4px;width:4px;height:30px;background:#fff;border-radius:2px;box-shadow:0 0 10px #fff;transition:left .25s}
@@ -159,7 +159,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.0.2</span>
+    <span class="chip ver" id="ver">v4.1.0</span>
   </div>
 </header>
 
@@ -225,10 +225,10 @@ footer a{color:var(--c)}
     </div>
 
     <nav class="tabs" role="tablist">
-      <button class="tab active" data-tab="devices" role="tab">DEVICES</button>
-      <button class="tab" data-tab="watch" role="tab" id="tab-watch">FOLLOWING ME?<span class="badge" id="watch-badge">0</span></button>
-      <button class="tab" data-tab="pro" role="tab" id="tab-pro">PRO TOOLS</button>
-      <button class="tab" data-tab="find" role="tab" id="tab-find">FIND</button>
+      <button class="tab active" data-tab="devices" role="tab" aria-selected="true" aria-controls="pane-devices">DEVICES</button>
+      <button class="tab" data-tab="watch" role="tab" id="tab-watch" aria-selected="false" aria-controls="pane-watch">FOLLOWING ME?<span class="badge" id="watch-badge">0</span></button>
+      <button class="tab" data-tab="pro" role="tab" id="tab-pro" aria-selected="false" aria-controls="pane-pro">PRO TOOLS</button>
+      <button class="tab" data-tab="find" role="tab" id="tab-find" aria-selected="false" aria-controls="pane-find">FIND</button>
     </nav>
 
     <!-- DEVICES -->
@@ -262,6 +262,7 @@ footer a{color:var(--c)}
           <button class="btn small" id="d-decode">DECODE</button>
           <button class="btn small" id="d-monitor">MONITOR</button>
           <button class="btn small" id="d-mine">THIS IS MINE</button>
+          <button class="btn small" id="d-hollow">WHAT DOES THIS MEAN?</button>
         </div>
       </div>
     </section>
@@ -274,7 +275,7 @@ footer a{color:var(--c)}
         <div class="sliders">
           <label>Alert after<input id="follow-min" type="range" min="3" max="60" step="1" value="10"><span id="follow-min-val">10m</span></label>
         </div>
-        <p class="note">Rule: tracker-type device, not marked mine, nearby ≥ the time above, with mid/strong signal (≥ −80 dBm) at least 60% of that time. Trackers rotate their Bluetooth address (often every ~15 min near the owner), so one tag can appear as a new ID — NEXUS groups by brand + type to soften that, but this is an estimate, not proof.</p>
+        <p class="note">Rule: tracker-type device, not marked mine, nearby ≥ the time above, with mid/strong signal (≥ −80 dBm) at least 60% of that time. Trackers rotate their Bluetooth address (often every ~15 min near the owner). NEXUS tracks each tag by its own Bluetooth ID, so a rotated tag will still appear as a new ID — this is an estimate, not proof.</p>
       </div>
       <div id="watch-list"></div>
     </section>
@@ -356,18 +357,33 @@ footer a{color:var(--c)}
   </div>
 </div>
 
+<div id="hollow-help" class="modal" role="dialog" aria-modal="true" aria-labelledby="hollow-title">
+  <div class="box">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:.5rem;margin-bottom:.5rem">
+      <b id="hollow-title" class="c" style="letter-spacing:.1em">WHAT DOES A HOLLOW DOT MEAN?</b>
+      <button class="btn small" id="hollow-close">GOT IT</button>
+    </div>
+    <div id="hollow-device" class="note" style="margin:0 0 .5rem"></div>
+    <p>A hollow dot means <b>distance only, direction unknown</b>. Your phone can hear how strong the signal is, which gives a rough distance ring, but it cannot measure true angle-of-arrival like a radar antenna. So NEXUS parks a hollow dot on its distance ring instead of pretending it knows the direction.</p>
+    <p>A solid dot means NEXUS has an estimated direction — from you turning slowly with COMPASS on, or from a SWEEP in FIND.</p>
+    <p>To turn this hollow dot solid: tap ENABLE COMPASS, hold the phone flat at your chest, and turn slowly in a full circle. Or go to FIND and run a SWEEP. Then walk toward the strongest side and watch HOT/COLD.</p>
+    <p class="note" id="hollow-link-note" style="display:none">This device only gives link %, not signal strength, so a sweep needs real dBm — follow HOT/COLD instead.</p>
+    <div class="row"><button class="btn small primary" id="hollow-compass">ENABLE COMPASS</button><button class="btn small" id="hollow-find">FIND IT</button></div>
+  </div>
+</div>
+
 <footer>
-  NEXUS BLE Tactical Radar v4.0.2 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.0 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.0.2 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.0 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.0.2';
+const VERSION = '4.1.0';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -480,7 +496,6 @@ let selectedId = null, pulseUntil = 0, followMin = 10;
 let heading = null, compassOn = false;
 let soundOn = false, vibeOn = false, audioCtx = null;
 let sweep = null; // {start, bins:[], simHeading}
-let sweepAngle = 0;
 const PROFILES = { eco:{N:2.2,Q:4.5,throttle:1000,label:'ECO'}, precise:{N:2.5,Q:3,throttle:0,label:'PRECISE'}, outdoor:{N:2.0,Q:3.5,throttle:0,label:'OUTDOOR'}, pro:{N:null,Q:null,throttle:0,label:'PRO'} };
 
 /* ---------- Session memory (localStorage) ---------- */
@@ -491,12 +506,12 @@ try { JSON.parse(localStorage.getItem('nexus-ble-favs')||'[]').forEach(id => { (
 let memDirty = false;
 const sessionSeen = new Set();
 const memFor = id => (mem[id] = mem[id] || { firstSeen: Date.now(), lastSeen: 0, seeCount: 0, sessions: 0, nickname: '', favorite: false, mine: false, familiarMs: 0 });
-setInterval(() => { if (memDirty) { try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); } catch (e) {} memDirty = false; } }, 2500);
+setInterval(() => { if (memDirty) { const cutoff = Date.now() - 30*24*60*60*1000; for (const [id, m] of Object.entries(mem)) { if (!m.favorite && !m.mine && !m.nickname && m.lastSeen && m.lastSeen < cutoff) delete mem[id]; } try { localStorage.setItem(MEM_KEY, JSON.stringify(mem)); } catch (e) {} memDirty = false; } }, 2500);
 const FAMILIAR_MS = 30 * 60 * 1000;
 
 /* ---------- Capability / honesty (LIVE path ported from build A) ---------- */
 const UA = navigator.userAgent || '';
-const LIVE_URL = 'https://antmanthepro.github.io/nexus-ble-radar/';
+const LIVE_URL = (window.location.protocol === 'http:' || window.location.protocol === 'https:') ? window.location.origin + window.location.pathname : 'https://nexus-ble-radar.netlify.app/';
 const BLUEFY_URL = 'https://apps.apple.com/app/id1492822055';
 const cap = {
   iOS: /iPad|iPhone|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1),
@@ -530,7 +545,7 @@ cap.why = (noLiveReason() || [null])[0]
   || (cap.scan ? 'This browser can scan for real. Tap START LIVE SCAN and allow the Bluetooth prompt to go LIVE.'
     : cap.bluefy ? 'Bluefy detected: go LIVE one device at a time (+ TRACK A DEVICE). If a device gives no signal reading, NEXUS shows link % — not dBm.'
     : 'Web Bluetooth is here, but open scanning (requestLEScan) is off — you can go LIVE one device at a time (+ TRACK A DEVICE), or enable chrome://flags/#enable-experimental-web-platform-features and relaunch to see everything nearby.');
-const liveLabel = () => cap.scan || !cap.live ? 'START LIVE SCAN' : 'GO LIVE · PICK DEVICE';
+const liveLabel = () => !cap.live ? 'HOW TO GO LIVE' : cap.scan ? 'START LIVE SCAN' : 'GO LIVE · PICK DEVICE';
 
 function setState(s, reason) {
   state = s;
@@ -597,6 +612,7 @@ function enterPractice(reason, actions) {
   realRadio = false; liveKind = null; scenarioSeeded = false;
   groups.clear(); selectedId = null; sweep = null; setWalk(false);
   setState('practice', reason || (cap.live ? 'Live is available — tap ' + liveLabel() + '.' : cap.why));
+  seedPracticeDevices();
   if (reason) showHint(reason, actions || ['help']); else hideHint();
 }
 async function startLive() {
@@ -703,7 +719,7 @@ async function linkLoop(d) {
       d.latEma = d.latEma == null ? ls : d.latEma * 0.6 + ls * 0.4; }
     d.linkScore = d.succEma * (d.latEma ?? 0);
     d.lastLatency = Math.round(lat); d.lastLinkOk = ok;
-    if (ok || d.hasReading) feedLink(d, Date.now());
+    if (ok) feedLink(d, Date.now());
     await sleep(900);
   }
   d.linking = false;
@@ -880,7 +896,7 @@ const isFamiliar = d => !!(mem[d.id] && mem[d.id].familiarMs > FAMILIAR_MS);
 function trackGroup(d, dt) {
   if (!isTracker(d) || isMine(d) || d.unit === 'link') return;
   if (d.dec.trackerState === 'near-owner') return; // with its owner (maybe you) — not alert-eligible
-  const key = (d.sim ? 'sim|' : '') + (d.dec.brand || '?') + '|' + (d.dec.product || 'tracker');
+  const key = (d.sim ? 'sim|' : '') + d.id;
   let g = groups.get(key);
   const now = Date.now();
   if (!g) { g = { key, label: (d.dec.product || 'Tracker'), brand: d.dec.brand, firstSeen: now, lastHeard: 0, presentMs: 0, strongMs: 0, members: new Set(), lastRssi: d.filt, sim: d.sim, ignored:false }; groups.set(key, g); }
@@ -936,6 +952,21 @@ function simTick(now) {
       const d = devices.get(s.id); const g = [...groups.values()].find(g => g.members.has(s.id));
       if (d && g) { d.presentMs = g.presentMs = 14*60000; d.strongMs = g.strongMs = 13*60000; g.firstSeen = d.firstHeard = now - 14*60000; scenarioSeeded = true; }
     }
+  });
+}
+
+/* Practice on load: seed a few labeled devices instantly, so first paint is not empty.
+   simTick keeps updating them afterwards; s.next stops an immediate duplicate tick. */
+function seedPracticeDevices() {
+  if (state !== 'practice') return;
+  if ([...devices.values()].some(d => d.sim)) return;
+  const now = Date.now();
+  SIM.slice(0, 5).forEach(s2 => {
+    s2.next = now + s2.iv;
+    const rssi = Math.max(-100, Math.min(-28, Math.round(-59 - 10*2.5*Math.log10(s2.trueDist))));
+    ingest({ id:s2.id, name:s2.name || '', rssi, txPower:null, simAngle:s2.ang*Math.PI/180,
+      uuids:(s2.uuids||[]).map(U), mfg:(s2.mfg||[]).map(([id,b]) => ({ id, data:new DataView(new Uint8Array(b).buffer) })),
+      svcData:(s2.svc||[]).map(([u,b]) => ({ uuid:U(u), data:new DataView(new Uint8Array(b).buffer) })) }, true);
   });
 }
 
@@ -1010,9 +1041,9 @@ function drawRadar(now) {
   // labels: highest priority first, skip any that would overlap one already drawn
   ctx.font = '10px ui-monospace,monospace'; const placed = [];
   labels.sort((a,b) => a.pri - b.pri).forEach(L => {
-    const label = displayName(L.d).slice(0,18), w = ctx.measureText(label).width;
+    const label = displayName(L.d).slice(0,24), w = ctx.measureText(label).width;
     const lx = L.x + 10 + w > W ? L.x - 10 - w : L.x + 10, box = [lx - 2, L.y - 17, lx + w + 2, L.y - 3];
-    if (!L.sel && placed.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return;
+    if (placed.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return;
     placed.push(box); ctx.fillStyle = '#0a0a0fb0'; ctx.fillRect(box[0], box[1], box[2]-box[0], box[3]-box[1]);
     ctx.fillStyle = L.sel ? '#60efff' : isTracker(L.d) ? '#ff80bf' : '#e5e7ebcc'; ctx.fillText(label, lx, L.y - 6);
   });
@@ -1035,14 +1066,15 @@ function drawWalk(now) {
   const ft = d.distM*M2FT, close = 1 - Math.min(1, ft/100);
   const known = d.sim || d.bearing != null;
   const ang = d.bearing != null ? d.bearing : d.angle;
-  const rel = known && heading != null ? ang - heading*Math.PI/180 : (known && d.sim ? ang : 0);
-  const bx = CX + Math.sin(rel) * W*0.3 * (1-close*0.5), by = horizon + (H-horizon)*(0.12 + close*0.45), size = 6 + close*38;
+  const rel = known && heading != null ? ang - heading*Math.PI/180 : null;
+  const bx = rel == null ? CX : CX + Math.sin(rel) * W*0.3 * (1-close*0.5), by = horizon + (H-horizon)*(0.12 + close*0.45), size = 6 + close*38;
   ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = colorFor(d); ctx.fillStyle = colorFor(d); ctx.beginPath(); ctx.arc(bx,by,size,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#60efff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx,by-40-close*40); ctx.stroke(); ctx.restore();
   ctx.fillStyle = '#00ff87'; ctx.font = '13px ui-monospace,monospace'; ctx.fillText(displayName(d).slice(0,28), 14, 74);
   ctx.fillStyle = '#60efff'; ctx.font = '11px ui-monospace,monospace';
   ctx.fillText('About ' + Math.round(ft) + ' ft (estimate' + (d.unit === 'link' ? ' from link %' : '') + ')', 14, 92);
   ctx.fillText(d.bearing != null ? 'Bearing (' + (d.bearingSrc === 'turn' ? 'compass turn' : 'sweep') + '): ' + dirName(d.bearing) : d.sim ? 'Simulated direction: ' + dirName(d.angle) : 'Direction unknown — COMPASS + turn in a circle, or SWEEP in FIND', 14, 108);
+  if (rel == null && known) ctx.fillText('Walk View needs your heading — this dot is distance only, not straight ahead', 14, 124);
 }
 const DIRS = ['N','NE','E','SE','S','SW','W','NW'];
 const dirName = a => DIRS[Math.round((((a*180/Math.PI)%360)+360)%360/45)%8];
@@ -1078,7 +1110,7 @@ function tagChips(d) {
 }
 function renderList() {
   const now = Date.now();
-  for (const [id, d] of devices) { if (d.picked || (!d.sim && (id === selectedId || isFav(d)))) continue; if (now - d.lastSeen > (d.sim ? 20000 : 120000)) { devices.delete(id); if (selectedId === id) selectedId = null; } }
+  if (state !== 'paused') for (const [id, d] of devices) { if (d.picked) continue; if (now - d.lastSeen > (d.sim ? 20000 : 120000)) { devices.delete(id); if (selectedId === id) selectedId = null; } }
   const arr = [...devices.values()].filter(visible).sort((a,b) => (isTracker(b)&&!isMine(b)) - (isTracker(a)&&!isMine(a)) || a.distM - b.distM);
   const nReal = [...devices.values()].filter(d => d.hasReading).length;
   $('hud-count').textContent = 'DEVICES: ' + nReal + (realRadio ? ' (real)' : state === 'practice' ? ' (simulated)' : '');
@@ -1090,7 +1122,7 @@ function renderList() {
         <div class="meta">${brand}${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.conf ? ' · ' + Math.round(dec.conf*100) + '% sure' : ''} · seen ${d.sightings}× · ${fmtDur(d.presentMs)}</div>
         <div class="tags">${tagChips(d)}</div></div>
       <div class="r"><div class="rssi">${esc(readingText(d))}</div><div class="ft">~${Math.round(d.distM*M2FT)} ft</div></div></div>`;
-  }).join('') : `<div class="empty">${state === 'live' ? (liveKind === 'pick' && !bleScan ? 'Tap + TRACK A DEVICE to pick a real device.' : 'Listening… no advertisements yet. Bring a Bluetooth device close.') : realRadio ? 'LIVE stopped.' : 'Nothing matches this filter.'}</div>`;
+  }).join('') : `<div class="empty">${state === 'live' ? (liveKind === 'pick' && !bleScan ? 'Tap + TRACK A DEVICE to pick a real device.' : 'Listening… no advertisements yet. Bring a Bluetooth device close.') : realRadio ? 'LIVE stopped.' : devices.size === 0 && state === 'practice' ? 'Starting simulated devices…' : 'Nothing matches this filter.'}</div>`;
 }
 function renderDetail() {
   const d = selectedId && devices.get(selectedId);
@@ -1110,9 +1142,11 @@ function renderDetail() {
   $('d-id').textContent = d.id.length > 22 ? d.id.slice(0,22) + '…' : d.id;
   $('d-fav').textContent = isFav(d) ? '★ SAVED' : '☆ SAVE';
   $('d-mine').textContent = isMine(d) ? 'NOT MINE' : 'THIS IS MINE';
+  $('d-hollow').style.display = (d && !d.sim && d.bearing == null) ? '' : 'none';
   if (document.activeElement !== $('d-nick') && $('d-nick').dataset.for !== d.id) { $('d-nick').value = m.nickname || ''; $('d-nick').dataset.for = d.id; }
 }
 function renderWatch() {
+  const nowG = Date.now(); for (const [k, g] of groups) { if (!g.ignored && nowG - g.lastHeard > 600000) groups.delete(k); }
   const arr = [...groups.values()].sort((a,b) => b.presentMs - a.presentMs);
   let alerts = 0, watching = 0;
   const need = followMin * 60000;
@@ -1223,6 +1257,7 @@ function blip(freq, dur) {
   o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.02);
 }
 (function geiger() {
+  if (!soundOn) { setTimeout(geiger, 1000); return; }
   let wait = 300;
   const d = selectedId && devices.get(selectedId);
   if (soundOn && d && Date.now() - d.lastSeen < 3000) { const h = heatOf(d); wait = 1150 - h*1050; blip(500 + h*1500, 0.025); }
@@ -1294,7 +1329,7 @@ async function gattPick() {
 }
 /* ---------- Wiring ---------- */
 function selectDev(id) { selectedId = id; $('d-nick').dataset.for = ''; render(); }
-function showTab(t) { document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t)); document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + t)); render(); }
+function showTab(t) { document.querySelectorAll('.tab').forEach(b => { b.classList.toggle('active', b.dataset.tab === t); b.setAttribute('aria-selected', b.dataset.tab === t ? 'true' : 'false'); }); document.querySelectorAll('.pane').forEach(p => p.classList.toggle('active', p.id === 'pane-' + t)); render(); }
 document.querySelectorAll('.tab').forEach(b => b.onclick = () => showTab(b.dataset.tab));
 $('btn-scan').onclick = () => { if (state === 'live') stopLive(); else if (state === 'paused' && !realRadio && !cap.live) setState('practice'); else startLive(); };
 $('btn-pause').onclick = () => { if (state === 'live') stopLive(); else if (state === 'practice') setState('paused'); else if (realRadio) startLive(); else setState('practice'); };
@@ -1321,18 +1356,33 @@ document.querySelectorAll('[data-mode]').forEach(b => b.onclick = () => {
   if (p.Q != null) { kalmanQ = p.Q; $('q-slider').value = kalmanQ; $('q-val').textContent = kalmanQ.toFixed(1); devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ)); }
   if (profile === 'pro') showTab('pro');
 });
+document.querySelectorAll('[data-filter]').forEach(b => b.onclick = () => { filter = b.dataset.filter; document.querySelectorAll('[data-filter]').forEach(x => x.classList.toggle('active', x === b)); render(); });
 $('n-slider').oninput = e => { pathN = +e.target.value; $('n-val').textContent = pathN.toFixed(1); };
 $('tx-slider').oninput = e => { ref1m = +e.target.value; $('tx-val').textContent = ref1m; };
 $('q-slider').oninput = e => { kalmanQ = +e.target.value; $('q-val').textContent = kalmanQ.toFixed(1); devices.forEach(d => d.kf.setMeasurementNoise(kalmanQ)); };
 $('follow-min').oninput = e => { followMin = +e.target.value; $('follow-min-val').textContent = followMin + 'm'; try { localStorage.setItem('nexus-ble-v4-followmin', followMin); } catch (x) {} };
 try { const fm = +localStorage.getItem('nexus-ble-v4-followmin'); if (fm >= 3 && fm <= 60) { followMin = fm; $('follow-min').value = fm; $('follow-min-val').textContent = fm + 'm'; } } catch (e) {}
 $('list').onclick = e => { const r = e.target.closest('[data-id]'); if (r) selectDev(r.dataset.id); };
-$('list').onkeydown = e => { if (e.key === 'Enter') { const r = e.target.closest('[data-id]'); if (r) selectDev(r.dataset.id); } };
+$('list').onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { const r = e.target.closest('[data-id]'); if (r) { if (e.key === ' ') e.preventDefault(); selectDev(r.dataset.id); } } };
+let hollowExplained = false;
+function showHollowHelp(d) {
+  if (!d) return;
+  hollowExplained = true;
+  $('hollow-device').textContent = 'Device: ' + displayName(d) + ' · about ' + Math.round(d.distM*M2FT) + ' ft · ' + readingText(d);
+  $('hollow-link-note').style.display = d.unit === 'link' ? '' : 'none';
+  $('hollow-help').classList.add('on');
+}
+function closeHollowHelp() { $('hollow-help').classList.remove('on'); }
+$('hollow-close').onclick = closeHollowHelp;
+$('hollow-help').onclick = e => { if (e.target.id === 'hollow-help') closeHollowHelp(); };
+$('hollow-compass').onclick = () => { closeHollowHelp(); enableCompass(); };
+$('hollow-find').onclick = () => { closeHollowHelp(); showTab('find'); };
+$('d-hollow').onclick = () => { const d = devices.get(selectedId); if (d) showHollowHelp(d); };
 canvas.addEventListener('click', e => {
   const r = canvas.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
   let best = null, bd = 26;
   devices.forEach(d => { if (d.sx == null) return; const dd = Math.hypot(d.sx - x, d.sy - y); if (dd < bd) { bd = dd; best = d; } });
-  if (best) selectDev(best.id);
+  if (best) { selectDev(best.id); if (state === 'live' && !best.sim && best.bearing == null && !hollowExplained) showHollowHelp(best); }
 });
 $('d-fav').onclick = () => { const d = devices.get(selectedId); if (!d) return; const m = memFor(d.id); m.favorite = !m.favorite; memDirty = true; render(); };
 $('d-mine').onclick = () => { const d = devices.get(selectedId); if (!d) return; const m = memFor(d.id); m.mine = !m.mine; memDirty = true; if (m.mine) for (const [k,g] of groups) { g.members.delete(d.id); if (!g.members.size) groups.delete(k); } render(); };
@@ -1372,7 +1422,7 @@ function rowsForExport() {
       first_seen: m.firstSeen ? new Date(m.firstSeen).toISOString() : '', nearby_s: Math.round(d.presentMs/1000), saved: !!m.favorite, mine: !!m.mine, nickname: m.nickname || '',
       company_ids: (d.adv && d.adv.mfg || []).map(x => h4(x.id)).join(' '), services: (d.adv && d.adv.uuids || []).map(svcName).join(' | ') }; });
 }
-function download(name, text, type) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name; document.body.appendChild(a); a.click(); a.remove(); }
+function download(name, text, type) { const a = document.createElement('a'); const url = URL.createObjectURL(new Blob([text], { type })); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 5000); }
 $('btn-csv').onclick = () => { const rows = rowsForExport(); if (!rows.length) return; const cols = Object.keys(rows[0]); const q = v => '"' + String(v).replace(/"/g,'""') + '"'; download('nexus-ble-' + state + '-' + Date.now() + '.csv', [cols.join(','), ...rows.map(r => cols.map(c => q(r[c])).join(','))].join('\n'), 'text/csv'); };
 $('btn-json').onclick = () => download('nexus-ble-' + state + '-' + Date.now() + '.json', JSON.stringify({ app:'NEXUS BLE Tactical Radar', version: VERSION, mode: state, live_kind: liveKind, exported: new Date().toISOString(), calibration: { pathN, ref1m, kalmanQ, profile }, devices: rowsForExport() }, null, 2), 'application/json');
 $('btn-forget').onclick = () => { if (!confirm('Forget nicknames, saved devices, "mine" tags and history on this browser?')) return; mem = {}; sessionSeen.clear(); try { localStorage.removeItem(MEM_KEY); localStorage.removeItem('nexus-ble-favs'); } catch (e) {} render(); };
@@ -1380,7 +1430,7 @@ $('btn-forget').onclick = () => { if (!confirm('Forget nicknames, saved devices,
 document.addEventListener('keydown', e => {
   if (e.target.matches('input,textarea')) return;
   if ($('help').classList.contains('on')) { if (e.key === 'Escape') closeHelp(); return; }
-  if (e.key === ' ') { e.preventDefault(); $('btn-scan').click(); }
+  if (e.key === ' ') { if (e.defaultPrevented) return; const t = e.target; if (t && t.closest && t.closest('[data-id]')) return; if (t && t !== $('btn-scan') && t.matches && t.matches('button, a, [role="button"]')) return; e.preventDefault(); $('btn-scan').click(); }
   else if (e.key === 'l' || e.key === 'L') openHelp();
   else if (e.key === 't' || e.key === 'T') $('btn-trails').click();
   else if (e.key === 'v' || e.key === 'V' || e.key === '3') $('btn-walk').click();
@@ -1397,7 +1447,8 @@ function frame(now) {
 setInterval(render, 200);
 // boot: always starts in honest PRACTICE
 setState('practice', cap.live ? 'Live is available — tap ' + liveLabel() + '.' : cap.why);
-{ const why0 = noLiveReason(); if (why0) showHint(why0[0], why0[1]); }
+seedPracticeDevices();
+{ /* Banner already shows the no-live reason on first paint; hint strip appears after a failed live attempt, not stacked on load. */ }
 if (cap.bt) {
   try { navigator.bluetooth.addEventListener('advertisementreceived', onLiveAdv); } catch (e) {}
   try {
