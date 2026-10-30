@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.0</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.0 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.1</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.1 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a0a0f' stroke='%2300ff87' stroke-width='1.5'/%3E%3Ccircle cx='32' cy='32' r='19' fill='none' stroke='%2360efff' stroke-width='1.2'/%3E%3Cpath d='M20 42 L32 14 L44 42 M25.5 32 H38.5' fill='none' stroke='%2300ff87' stroke-width='2.6' stroke-linecap='round'/%3E%3Ccircle cx='32' cy='32' r='3.2' fill='%23ff0080'/%3E%3C/svg%3E">
 <style>
@@ -159,7 +159,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.0</span>
+    <span class="chip ver" id="ver">v4.1.1</span>
   </div>
 </header>
 
@@ -373,17 +373,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.0 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.1 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.0 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.1 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.0';
+const VERSION = '4.1.1';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -878,14 +878,60 @@ function cleanName(s) {
   if (n.length <= 2 && !/[a-z]/i.test(n)) return null;
   return n.slice(0, 40);
 }
+/* Decode-first naming (2026-10-29): the plain-language decode is the primary
+   label everywhere (radar, list, detail, FIND). The raw broadcast name is
+   never the primary label — it is shown only as a secondary "Broadcast:"
+   line when it differs and actually looks human-readable. Code-like
+   broadcast names (bare hex, serial-style jumbles, MAC-like strings) are
+   suppressed entirely, so the user never has to parse letters + numbers. */
+function isCodeLike(n) {
+  if (!n) return true;
+  if (!/[a-z]/i.test(n)) return true;
+  if (!/\s/.test(n)) {
+    const digits = (n.match(/[0-9]/g) || []).length;
+    const letters = (n.match(/[a-z]/gi) || []).length;
+    // No spaces + mostly digits/symbols, or a long all-caps+digits token:
+    // e.g. AB12CD34, XK9382Q, Device_8472, 7F3A9C — not a product name.
+    if (digits >= 3 && digits / Math.max(1, letters + digits) >= 0.35) return true;
+    if (/^[A-Z0-9]{6,}$/.test(n) && !/[a-z]/.test(n)) return true;
+    if (/_/.test(n) && digits >= 2) return true;
+  }
+  return false;
+}
+function decodedLabel(d) {
+  const dec = d.dec || {};
+  if (dec.product) {
+    // Product strings already carry the brand in most cases
+    // ("Find My tag…", "Galaxy SmartTag", "AirPods / Beats").
+    if (dec.brand && !dec.product.toLowerCase().startsWith(dec.brand.toLowerCase())) return dec.brand + ' ' + dec.product;
+    return dec.product;
+  }
+  if (dec.brand && dec.kind && dec.kind !== 'UNKNOWN') return dec.brand + ' ' + (KIND_LABEL[dec.kind] || 'device');
+  if (dec.brand) return dec.brand + ' device';
+  return null;
+}
+function broadcastName(d) {
+  const nice = cleanName(d.advName);
+  if (!nice || isCodeLike(nice)) return null;
+  const dec = decodedLabel(d);
+  if (dec && nice.toLowerCase() === dec.toLowerCase()) return null;
+  return nice;
+}
 function displayName(d) {
   const m = mem[d.id];
   if (m && m.nickname) return m.nickname;
-  const nice = cleanName(d.advName);
+  const dec = decodedLabel(d);
+  if (dec) return dec;
+  // No usable decode: fall back to a human-looking broadcast name only.
+  const nice = broadcastName(d);
   if (nice) return nice;
-  if (d.dec && d.dec.product) return d.dec.product;
-  if (d.dec && d.dec.brand) return d.dec.brand + ' device';
-  return 'Unidentified · #' + d.id.replace(/[^a-z0-9]/gi,'').slice(-4).toUpperCase();
+  return 'Unidentified device';
+}
+function plainWhy(d) {
+  const dec = d.dec || {};
+  if (dec.notes && dec.notes.length) return dec.notes[0];
+  if (dec.brand) return 'Identified from its Bluetooth company / service IDs, not its broadcast name.';
+  return 'No brand or type could be decoded from its advertisement, so it is shown as unidentified rather than as a code string.';
 }
 const isTracker = d => d.dec && d.dec.kind === 'TRACKER';
 const isMine = d => !!(mem[d.id] && mem[d.id].mine);
@@ -986,7 +1032,7 @@ const pos = (ang, dn) => [CX + Math.sin(ang)*R*dn, CY - Math.cos(ang)*R*dn];
 const visible = d => {
   if (filter === 'saved') return isFav(d);
   if (filter === 'trackers') return isTracker(d);
-  if (filter === 'named') return !!(d.advName || (d.dec && d.dec.brand) || (mem[d.id] && mem[d.id].nickname));
+  if (filter === 'named') return !!((d.dec && decodedLabel(d)) || broadcastName(d) || (mem[d.id] && mem[d.id].nickname));
   return true;
 };
 function colorFor(d) { if (d.id === selectedId) return '#60efff'; if (isTracker(d) && !isMine(d)) return '#ff0080'; if (isFav(d)) return '#ffcc00'; return '#00ff87'; }
@@ -1117,9 +1163,11 @@ function renderList() {
   $('list').innerHTML = arr.length ? arr.map(d => {
     const dec = d.dec || {}; const m = mem[d.id] || {};
     const brand = dec.brand ? esc(dec.brand) + ' · ' : '';
+    const bc = broadcastName(d);
+    const bcLine = (bc && bc !== displayName(d)) ? `<div class="meta">Broadcast name: ${esc(bc)}</div>` : '';
     return `<div class="dev ${d.id===selectedId?'sel':''} ${isFav(d)?'fav':''} ${isTracker(d)&&!isMine(d)?'trk':''}" data-id="${esc(d.id)}" role="button" tabindex="0">
       <div class="left"><div class="nm">${esc(displayName(d))}</div>
-        <div class="meta">${brand}${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.conf ? ' · ' + Math.round(dec.conf*100) + '% sure' : ''} · seen ${d.sightings}× · ${fmtDur(d.presentMs)}</div>
+        <div class="meta">${brand}${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.conf ? ' · ' + Math.round(dec.conf*100) + '% sure' : ''} · seen ${d.sightings}× · ${fmtDur(d.presentMs)}</div>${bcLine}
         <div class="tags">${tagChips(d)}</div></div>
       <div class="r"><div class="rssi">${esc(readingText(d))}</div><div class="ft">~${Math.round(d.distM*M2FT)} ft</div></div></div>`;
   }).join('') : `<div class="empty">${state === 'live' ? (liveKind === 'pick' && !bleScan ? 'Tap + TRACK A DEVICE to pick a real device.' : 'Listening… no advertisements yet. Bring a Bluetooth device close.') : realRadio ? 'LIVE stopped.' : devices.size === 0 && state === 'practice' ? 'Starting simulated devices…' : 'Nothing matches this filter.'}</div>`;
@@ -1130,7 +1178,7 @@ function renderDetail() {
   if (!d) return;
   const dec = d.dec || {}, m = memFor(d.id);
   $('d-name').textContent = displayName(d);
-  $('d-brand').innerHTML = `${esc(dec.brand || 'Unknown brand')} · ${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.product && dec.product !== displayName(d) ? ' · ' + esc(dec.product) : ''}${dec.conf ? ` · <span class="c">${Math.round(dec.conf*100)}% sure</span>` : ''}`;
+  $('d-brand').innerHTML = `${esc(dec.brand || 'Unknown brand')} · ${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.product && dec.product !== displayName(d) ? ' · ' + esc(dec.product) : ''}${dec.conf ? ` · <span class="c">${Math.round(dec.conf*100)}% sure</span>` : ''}<br><span class="mut">${esc(plainWhy(d))}</span>${broadcastName(d) && broadcastName(d) !== displayName(d) ? `<br><span class="mut">Broadcast name: ${esc(broadcastName(d))}</span>` : ''}`;
   $('d-tags').innerHTML = tagChips(d);
   $('d-dist').textContent = 'About ' + Math.round(d.distM*M2FT) + ' ft';
   $('d-rssi-lbl').textContent = d.unit === 'link' ? 'LINK QUALITY (not dBm)' : 'SIGNAL (smoothed)';

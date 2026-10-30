@@ -1,4 +1,4 @@
-# NEXUS BLE Tactical Radar — Netlify config (candidate, not pushed yet)
+# NEXUS BLE Tactical Radar — Netlify config
 # Single-file static site: no build step, publish the repo root.
 [build]
   publish = "."
