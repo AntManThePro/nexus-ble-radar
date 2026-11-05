@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.1</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.1 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.2</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.2 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -160,7 +160,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.1</span>
+    <span class="chip ver" id="ver">v4.1.2</span>
   </div>
 </header>
 
@@ -374,17 +374,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.1 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.2 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.1 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.2 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.1';
+const VERSION = '4.1.2';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -862,7 +862,7 @@ function ingest(a, sim) {
   if (sim && a.simAngle != null) d.angle = a.simAngle;
   const m = memFor(d.id); m.lastSeen = now; if (!m.firstSeen) m.firstSeen = now; memDirty = true;
   if (!sim) passiveBearing(d, a.rssi);
-  if (sweep && d.id === selectedId) { const hd = sweep.simHeading != null ? sweep.simHeading : heading; if (hd != null) { const bi = Math.floor(((hd % 360) + 360) % 360 / 30); sweep.bins[bi].push(a.rssi); } }
+  if (sweep && !sweep.paused && d.id === selectedId) { const hd = sweep.simHeading != null ? sweep.simHeading : heading; if (hd != null) { const bi = Math.floor(((hd % 360) + 360) % 360 / 30); sweep.bins[bi].push(a.rssi); } }
   trackGroup(d, dt);
 }
 
@@ -1279,10 +1279,15 @@ function renderFind() {
   lastTrend = trend;
   $('find-trend').textContent = trend === 'WARMER' ? '▲ WARMER — keep going this way' : trend === 'COLDER' ? '▼ COLDER — turn around or try another direction' : '■ STEADY — move a few steps or sweep';
   if (sweep) {
-    const left = Math.max(0, 20 - (Date.now() - sweep.start)/1000);
-    const hd = sweep.simHeading != null ? sweep.simHeading : heading;
-    $('find-sweep-out').innerHTML = `<span class="y">Sweeping… turn slowly · ${left.toFixed(0)}s left · heading ${hd != null ? Math.round(hd) + '°' : '—'}</span>`;
-    if (left <= 0) finishSweep();
+    const filledBins = sweep.bins.filter(b => b.length >= 1).length;
+    if (sweep.paused) {
+      $('find-sweep-out').innerHTML = `<span class="p">Paused: only ${filledBins}/12 bins filled — tap RESUME SWEEP and keep turning slowly to fill more bins. Nothing collected so far is lost.</span>`;
+    } else {
+      const left = Math.max(0, 20 - (Date.now() - sweep.start)/1000);
+      const hd = sweep.simHeading != null ? sweep.simHeading : heading;
+      $('find-sweep-out').innerHTML = `<span class="y">Sweeping… turn slowly · ${left.toFixed(0)}s left · heading ${hd != null ? Math.round(hd) + '°' : '—'} · bins ${filledBins}/12</span>`;
+      if (left <= 0) finishSweep();
+    }
   }
 }
 function render() {
@@ -1329,9 +1334,15 @@ function startSweep() {
   const d = selectedId && devices.get(selectedId);
   if (!d) { $('find-sweep-out').textContent = 'Pick a device first.'; return; }
   if (d.unit === 'link') { $('find-sweep-out').textContent = 'Sweep needs real signal-strength readings; this device only gives link % (Bluefy link check). Use COMPASS + turning slowly and follow HOT/COLD.'; return; }
-  if (d.sim) sweep = { start: Date.now(), bins: Array.from({length:12}, () => []), simHeading: 0 };
+  // Resume a paused sweep for the same device: keep its bins, give a fresh 20 s to fill the rest.
+  if (sweep && sweep.paused && sweep.deviceId === d.id) {
+    sweep.paused = false; sweep.start = Date.now();
+    $('find-sweep').textContent = 'SWEEPING…'; $('find-sweep').classList.add('on');
+    return;
+  }
+  if (d.sim) sweep = { start: Date.now(), deviceId: d.id, paused: false, bins: Array.from({length:12}, () => []), simHeading: 0 };
   else if (heading == null) { $('find-sweep-out').textContent = 'Turn on the compass first (ENABLE COMPASS). Without it, turn slowly and follow HOT/COLD.'; return; }
-  else sweep = { start: Date.now(), bins: Array.from({length:12}, () => []), simHeading: null };
+  else sweep = { start: Date.now(), deviceId: d.id, paused: false, bins: Array.from({length:12}, () => []), simHeading: null };
   $('find-sweep').textContent = 'SWEEPING…'; $('find-sweep').classList.add('on');
 }
 function finishSweep() {
@@ -1339,7 +1350,13 @@ function finishSweep() {
   const d = selectedId && devices.get(selectedId);
   const means = s.bins.map(b => b.length >= 1 ? b.reduce((a,c)=>a+c,0)/b.length : null);
   const filled = means.filter(v => v != null);
-  if (!d || filled.length < 4) { $('find-sweep-out').innerHTML = '<span class="p">Not enough readings — turn slower and keep the device advertising.</span>'; return; }
+  if (!d || filled.length < 4) {
+    // Pause instead of discarding: keep the bins so RESUME SWEEP can fill the rest.
+    sweep = { start: s.start, bins: s.bins, simHeading: s.simHeading, deviceId: (d && d.id) || s.deviceId, paused: true };
+    $('find-sweep').textContent = 'RESUME SWEEP'; $('find-sweep').classList.remove('on');
+    $('find-sweep-out').innerHTML = `<span class="p">Only ${filled.length}/12 bins filled — not enough for a bearing yet. Tap RESUME SWEEP and keep turning slowly; your ${filled.length} bin(s) are kept, not thrown away.</span>`;
+    return;
+  }
   let bi = 0; means.forEach((v,i) => { if (v != null && (means[bi] == null || v > means[bi])) bi = i; });
   const sorted = [...filled].sort((a,b)=>a-b), median = sorted[Math.floor(sorted.length/2)];
   const spread = means[bi] - median, coverage = filled.length / 12;
@@ -1458,7 +1475,7 @@ $('find-sound').onclick = () => {
 };
 $('find-vibe').onclick = () => { vibeOn = !vibeOn && !!navigator.vibrate; $('find-vibe').textContent = vibeOn ? 'VIBRATE ON' : (navigator.vibrate ? 'VIBRATE OFF' : 'NO VIBRATE'); $('find-vibe').classList.toggle('on', vibeOn); };
 $('find-compass').onclick = enableCompass;
-$('find-sweep').onclick = () => sweep ? finishSweep() : startSweep();
+$('find-sweep').onclick = () => (sweep && !sweep.paused) ? finishSweep() : startSweep();
 $('gatt-pick').onclick = gattPick;
 $('gatt-dc').onclick = () => { try { gattDev && gattDev.gatt.disconnect(); } catch (e) {} };
 if (!cap.gatt) $('gatt-pick').textContent = 'PICK & CONNECT (unavailable here)';
