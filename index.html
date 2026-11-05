@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.3</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.3 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.4</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.4 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -160,7 +160,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.3</span>
+    <span class="chip ver" id="ver">v4.1.4</span>
   </div>
 </header>
 
@@ -338,6 +338,7 @@ footer a{color:var(--c)}
         <div class="note" id="find-trend" style="text-align:center">—</div>
         <div class="row" style="margin-top:.5rem">
           <button class="btn small" id="find-sound">🔈 GEIGER OFF</button>
+          <button class="btn small" id="find-test-sound">TEST SOUND</button>
           <button class="btn small" id="find-vibe">VIBRATE OFF</button>
           <button class="btn small" id="find-compass">ENABLE COMPASS</button>
           <button class="btn small" id="find-sweep">START SWEEP</button>
@@ -385,17 +386,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.3 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.4 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.3 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.4 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.3';
+const VERSION = '4.1.4';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -1360,15 +1361,21 @@ function render() {
 
 /* ---------- Find: Geiger audio, compass, sweep ---------- */
 function blip(freq, dur) {
-  if (!audioCtx) return; const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
-  o.type = 'square'; o.frequency.value = freq; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.12, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+  if (!audioCtx) return;
+  if (audioCtx.state === 'suspended') { try { audioCtx.resume(); } catch (e) {} }
+  const t = audioCtx.currentTime, o = audioCtx.createOscillator(), g = audioCtx.createGain();
+  o.type = 'square'; o.frequency.value = freq; g.gain.setValueAtTime(0.0001, t); g.gain.exponentialRampToValueAtTime(0.25, t + 0.003); g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
   o.connect(g).connect(audioCtx.destination); o.start(t); o.stop(t + dur + 0.02);
 }
 (function geiger() {
   if (!soundOn) { setTimeout(geiger, 1000); return; }
-  let wait = 300;
+  let wait = 1000;
   const d = selectedId && devices.get(selectedId);
-  if (soundOn && d && Date.now() - d.lastSeen < 3000) { const h = heatOf(d); wait = 1150 - h*1050; blip(500 + h*1500, 0.025); }
+  if (d && d.hasReading) {
+    const age = Date.now() - d.lastSeen;
+    if (age < 10000) { const h = heatOf(d); wait = 1150 - h*1050; blip(500 + h*1500, 0.05); }
+    else { wait = 1000; blip(300, 0.05); } // stale reading: slow low tick, never total silence
+  }
   setTimeout(geiger, wait);
 })();
 async function enableCompass() {
@@ -1534,6 +1541,13 @@ $('find-sound').onclick = () => {
   if (soundOn && !audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; } }
   if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
   $('find-sound').textContent = soundOn ? '🔊 GEIGER ON' : '🔈 GEIGER OFF'; $('find-sound').classList.toggle('on', soundOn);
+  if (soundOn && audioCtx) blip(1000, 0.08); // confirmation tick: if you hear this, audio works
+};
+$('find-test-sound').onclick = () => {
+  if (!audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { $('find-sweep-out').textContent = 'Audio not available in this browser.'; return; } }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  blip(1200, 0.1);
+  $('find-sweep-out').textContent = 'Test sound played — if you heard nothing, check volume and the silent switch. Geiger itself is ' + (soundOn ? 'ON' : 'OFF') + '.';
 };
 $('find-vibe').onclick = () => { vibeOn = !vibeOn && !!navigator.vibrate; $('find-vibe').textContent = vibeOn ? 'VIBRATE ON' : (navigator.vibrate ? 'VIBRATE OFF' : 'NO VIBRATE'); $('find-vibe').classList.toggle('on', vibeOn); };
 $('find-compass').onclick = enableCompass;
