@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="NEXUS BLE Tactical Radar icon">
+  <defs>
+    <clipPath id="dish">
+      <circle cx="256" cy="256" r="196"/>
+    </clipPath>
+    <linearGradient id="sweep" x1="256" y1="256" x2="395" y2="117" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00ff87" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#00ff87" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="#0a0a0f"/>
+  <rect x="8" y="8" width="496" height="496" rx="112" fill="none" stroke="#00ff87" stroke-width="6"/>
+  <g clip-path="url(#dish)">
+    <line x1="256" y1="40" x2="256" y2="472" stroke="#60efff" stroke-width="6" stroke-opacity="0.35"/>
+    <line x1="40" y1="256" x2="472" y2="256" stroke="#60efff" stroke-width="6" stroke-opacity="0.35"/>
+    <path d="M256 256 L256 60 A196 196 0 0 1 395 117 Z" fill="url(#sweep)"/>
+    <line x1="256" y1="256" x2="395" y2="117" stroke="#00ff87" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <circle cx="256" cy="256" r="196" fill="none" stroke="#60efff" stroke-width="10"/>
+  <circle cx="256" cy="256" r="132" fill="none" stroke="#60efff" stroke-width="8" stroke-opacity="0.75"/>
+  <circle cx="256" cy="256" r="68" fill="none" stroke="#60efff" stroke-width="8" stroke-opacity="0.9"/>
+  <circle cx="349" cy="163" r="34" fill="#ff0080" fill-opacity="0.25"/>
+  <circle cx="349" cy="163" r="22" fill="#ff0080" stroke="#0a0a0f" stroke-width="6"/>
+  <circle cx="150" cy="300" r="14" fill="#ffcc00" stroke="#0a0a0f" stroke-width="5"/>
+  <circle cx="256" cy="256" r="18" fill="#00ff87" stroke="#0a0a0f" stroke-width="6"/>
+</svg>
