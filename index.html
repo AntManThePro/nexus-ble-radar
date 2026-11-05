@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.2</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.2 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.3</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.3 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon.svg">
@@ -160,7 +160,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.2</span>
+    <span class="chip ver" id="ver">v4.1.3</span>
   </div>
 </header>
 
@@ -266,6 +266,12 @@ footer a{color:var(--c)}
           <button class="btn small" id="d-hollow">WHAT DOES THIS MEAN?</button>
         </div>
       </div>
+      <div class="card" id="leak-card">
+        <h3>LEAK AUDIT · WHAT AM I BROADCASTING?</h3>
+        <p class="note" style="margin-top:0">Uses only devices Radar has already heard in this session, plus saved memory. A custom broadcast name (for example, a phone named after you) is visible to <b>any nearby scanner</b>, not just to you. Your Radar nickname is local only and is <b>not</b> broadcast. This audit does not try to identify the owners of devices you have not marked as yours.</p>
+        <div class="row" style="margin-top:.45rem"><button class="btn small" id="leak-run">RUN LEAK AUDIT</button><button class="btn small" id="leak-export">EXPORT AUDIT</button></div>
+        <div id="leak-out" class="note" style="margin-top:.45rem">Tap RUN LEAK AUDIT. For the best result, run a live scan first so your own devices are in the list.</div>
+      </div>
     </section>
 
     <!-- FOLLOWING ME -->
@@ -279,6 +285,11 @@ footer a{color:var(--c)}
         <p class="note">Rule: tracker-type device, not marked mine, nearby ≥ the time above, with mid/strong signal (≥ −80 dBm) at least 60% of that time. Trackers rotate their Bluetooth address (often every ~15 min near the owner). NEXUS tracks each tag by its own Bluetooth ID, so a rotated tag will still appear as a new ID — this is an estimate, not proof.</p>
       </div>
       <div id="watch-list"></div>
+      <div class="card" style="border-color:#ff008066">
+        <h3><span class="p">DOSSIER · FOLLOWING-YOU TRAIL</span><span class="chip proto">NEW</span></h3>
+        <p class="note" style="margin-top:0">Trail score, not proof. It combines how long a tracker has been near you in total, how often it comes back after going quiet, how strong its signal is, and whether it is separated from its owner. NEXUS has <b>no GPS</b>, so this dossier records time and signal only — not places — and it never tries to identify who owns a tracker. Export it before the group drops off (10 min of silence) if you need it for law enforcement.</p>
+        <div id="dossier-list"></div>
+      </div>
     </section>
 
     <!-- PRO TOOLS -->
@@ -374,17 +385,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.2 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.3 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.2 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.3 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.2';
+const VERSION = '4.1.3';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -946,10 +957,10 @@ function trackGroup(d, dt) {
   const key = (d.sim ? 'sim|' : '') + d.id;
   let g = groups.get(key);
   const now = Date.now();
-  if (!g) { g = { key, label: (d.dec.product || 'Tracker'), brand: d.dec.brand, firstSeen: now, lastHeard: 0, presentMs: 0, strongMs: 0, members: new Set(), lastRssi: d.filt, sim: d.sim, ignored:false }; groups.set(key, g); }
+  if (!g) { g = { key, label: (d.dec.product || 'Tracker'), brand: d.dec.brand, firstSeen: now, lastHeard: 0, presentMs: 0, strongMs: 0, members: new Set(), lastRssi: d.filt, sim: d.sim, ignored:false, trailEpisodes: 1, trailTotalMs: 0, trailStrongMs: 0, trailFirstSeen: now }; groups.set(key, g); }
   const gdt = g.lastHeard ? Math.min(now - g.lastHeard, 60000) : 0;
-  if (g.lastHeard && now - g.lastHeard > 60000) { /* lost for > 1 min: restart the clock */ g.presentMs = 0; g.strongMs = 0; g.firstSeen = now; }
-  else if (gdt) { g.presentMs += gdt; if (d.filt >= -80) g.strongMs += gdt; }
+  if (g.lastHeard && now - g.lastHeard > 60000) { /* lost for > 1 min: restart the alert clock, but keep the cumulative trail */ g.presentMs = 0; g.strongMs = 0; g.firstSeen = now; g.trailEpisodes++; }
+  else if (gdt) { g.presentMs += gdt; if (d.filt >= -80) g.strongMs += gdt; g.trailTotalMs += gdt; if (d.filt >= -80) g.trailStrongMs += gdt; }
   g.lastHeard = now; g.lastRssi = d.filt; g.members.add(d.id); g.lastId = d.id;
 }
 function groupStatus(g) {
@@ -960,6 +971,48 @@ function groupStatus(g) {
   if (g.presentMs >= need && strongPct >= 0.6) return { s:'ALERT', strongPct };
   if (g.presentMs >= need / 3) return { s:'WATCHING', strongPct };
   return { s:'NEW', strongPct };
+}
+/* ---------- Following-You dossier: trail score, fingerprint, safety steps ---------- */
+function trailScore(g) {
+  const need = followMin * 60000;
+  const total = g.trailTotalMs || 0, strong = total ? (g.trailStrongMs || 0) / total : 0;
+  const d = devices.get(g.lastId), ts = d && d.dec ? d.dec.trackerState : null;
+  const persist = Math.min(40, Math.round(40 * total / need));
+  const returns = Math.min(25, Math.round(((g.trailEpisodes || 1) - 1) * 12.5));
+  const strongPts = Math.round(20 * strong);
+  const separated = ts === 'separated' ? 15 : 0;
+  const score = Math.min(100, persist + returns + strongPts + separated);
+  return { score, level: score >= 70 ? 'HIGH' : score >= 40 ? 'WATCH' : 'LOW', persist, returns, strongPts, separated, strongPct: strong, trackerState: ts };
+}
+function safetySteps(g) {
+  const label = (g.label || '').toLowerCase(), brand = (g.brand || '').toLowerCase();
+  const common = ['Check bags, coat, pockets and car — including linings, seat gaps and the spare-wheel well.', 'If you feel unsafe, contact local law enforcement and keep this dossier export; do not confront anyone you suspect.', 'Use your phone\'s built-in unknown-tracker alert (iPhone Find My / Android Unknown Tracker Alerts) alongside NEXUS.'];
+  if (label.includes('airtag') || label.includes('find my')) return ['Tap the AirTag with an NFC phone (top of an iPhone, or Android NFC) to see its serial number and any lost-mode message — that is Apple\'s official check, not a hack.', 'Play a sound from Find My, then twist the back off and remove the coin battery to disable it.', ...common];
+  if (brand.includes('tile') || label.includes('tile')) return ['Use the Tile app to ring it and locate it, then remove its battery where the model allows.', ...common];
+  if (label.includes('smarttag') || brand.includes('samsung')) return ['Use SmartThings Find to ring it and locate it, then remove its battery to disable it.', ...common];
+  if (brand.includes('chipolo') || label.includes('chipolo')) return ['Use the Chipolo app to ring it and locate it, then remove its battery where the model allows.', ...common];
+  if (label.includes('find hub') || label.includes('google')) return ['Use Android Unknown Tracker Alerts to play a sound, then remove its battery where the model allows.', ...common];
+  return ['This tracker advertises the cross-vendor unwanted-tracking beacon — your phone\'s built-in alert should already be able to play a sound on it. Follow that alert, then remove its battery where the model allows.', ...common];
+}
+function dossierFor(g) {
+  const t = trailScore(g), d = devices.get(g.lastId);
+  return { app: 'NEXUS BLE Tactical Radar', version: VERSION, exported: new Date().toISOString(), disclaimer: 'Estimate, not proof. No GPS was recorded. Browser IDs are per-site random IDs, not MAC addresses. No attempt was made to identify the tracker owner.', tracker: { label: g.label, brand: g.brand || null, product: (d && d.dec && d.dec.product) || g.label, trackerState: t.trackerState, confidence: d && d.dec ? Math.round(d.dec.conf * 100) + '%' : null, companyIds: d && d.dec ? (d.dec.companyIds || []).map(x => '0x' + x.toString(16).toUpperCase().padStart(4, '0')) : [], decodeNote: d && d.dec && d.dec.notes ? d.dec.notes[0] : null, browserIds: [...g.members] }, trail: { score: t.score, level: t.level, breakdown: { persistencePts: t.persist, returnsPts: t.returns, strongPts: t.strongPts, separatedPts: t.separated }, episodes: g.trailEpisodes || 1, totalNearby: fmtDur(g.trailTotalMs || 0), strongPct: Math.round(t.strongPct * 100) + '%', firstSeen: g.trailFirstSeen ? new Date(g.trailFirstSeen).toISOString() : null, lastHeard: g.lastHeard ? new Date(g.lastHeard).toISOString() : null, currentEpisodeNearby: fmtDur(g.presentMs) }, safetySteps: safetySteps(g) };
+}
+function renderDossier() {
+  const el = $('dossier-list'); if (!el) return;
+  const arr = [...groups.values()].sort((a, b) => trailScore(b).score - trailScore(a).score);
+  if (!arr.length) { el.innerHTML = '<div class="empty">No tracker groups yet — dossiers appear here once Tracker Watch hears an unknown tracker. Practice scenario: the Find My tag in PRACTICE seeds one.</div>'; return; }
+  el.innerHTML = arr.map(g => {
+    const t = trailScore(g), dos = dossierFor(g), chip = t.level === 'HIGH' ? '<span class="chip alert">HIGH TRAIL</span>' : t.level === 'WATCH' ? '<span class="chip tracker">WATCH</span>' : '<span class="chip paused">LOW</span>';
+    return `<div class="watch-item" data-group="${esc(g.key)}">
+      <div style="display:flex;justify-content:space-between;gap:.4rem;align-items:center"><b style="font-size:.78rem">${esc(g.label)}</b>${chip} <span class="m">${t.score}/100</span></div>
+      <div class="note" style="margin-top:.2rem">${esc(g.brand || 'Unknown brand')} · ${esc(dos.tracker.product || '')} · ${t.trackerState === 'separated' ? 'away from its owner' : t.trackerState === 'near-owner' ? 'near its owner' : 'owner state unknown'} · ${g.members.size} ID${g.members.size > 1 ? 's' : ''} ${g.sim ? '· <span class="y">PRACTICE</span>' : ''}</div>
+      <div class="note">Trail: ${g.trailEpisodes || 1} episode${(g.trailEpisodes || 1) > 1 ? 's' : ''} · total ${fmtDur(g.trailTotalMs || 0)} nearby · strong ${Math.round(t.strongPct * 100)}% · first ${fmtTime(g.trailFirstSeen)} · last ${fmtTime(g.lastHeard)}</div>
+      <div class="note">Score breakdown: persistence ${t.persist}/40 · returns ${t.returns}/25 · strong signal ${t.strongPts}/20 · separated ${t.separated}/15. Still an estimate, not proof of tracking.</div>
+      <div class="note">What to do: ${safetySteps(g).map(x => esc(x)).join(' ')}</div>
+      <div class="row" style="margin-top:.45rem"><button class="btn small pink" data-dossier-act="find">FIND IT</button><button class="btn small" data-dossier-act="export">EXPORT DOSSIER</button><button class="btn small" data-dossier-act="mine">IT'S MINE</button></div>
+    </div>`;
+  }).join('');
 }
 /* ---------- PRACTICE simulator (labeled; never runs while LIVE) ---------- */
 const U = s => '0000' + s.toString(16).padStart(4,'0') + '-0000-1000-8000-00805f9b34fb';
@@ -997,7 +1050,7 @@ function simTick(now) {
     if (s.scenario && !scenarioSeeded) {
       // PRACTICE scenario: an unknown Find My tag has been in your bag ~14 min
       const d = devices.get(s.id); const g = [...groups.values()].find(g => g.members.has(s.id));
-      if (d && g) { d.presentMs = g.presentMs = 14*60000; d.strongMs = g.strongMs = 13*60000; g.firstSeen = d.firstHeard = now - 14*60000; scenarioSeeded = true; }
+      if (d && g) { d.presentMs = g.presentMs = 14*60000; d.strongMs = g.strongMs = 13*60000; g.firstSeen = d.firstHeard = now - 14*60000; g.trailTotalMs = 14*60000; g.trailStrongMs = 13*60000; g.trailFirstSeen = now - 14*60000; scenarioSeeded = true; }
     }
   });
 }
@@ -1215,6 +1268,7 @@ function renderWatch() {
       : ('No unknown item trackers heard' + (state === 'live' ? ' yet' : '') + '. Tags you mark as mine never appear here.')
   }</div>`;
   const b = $('watch-badge'); b.textContent = alerts || watching; b.classList.toggle('on', alerts + watching > 0); b.style.background = alerts ? '#ff0080' : '#ff008088';
+  renderDossier();
   $('follow-strip').classList.toggle('on', alerts > 0);
   $('chip-follow').style.display = alerts ? '' : 'none';
   if (alerts) $('follow-text').textContent = `⚠ ${alerts} unknown tracker${alerts>1?'s':''} ${alerts>1?'have':'has'} stayed near you ${followMin}+ min${state==='practice'?' (PRACTICE scenario)':''}. Check your bag, coat and car.`;
@@ -1467,6 +1521,14 @@ $('watch-list').onclick = e => {
   if (btn.dataset.act === 'ignore') g.ignored = !g.ignored;
   render();
 };
+$('dossier-list').onclick = e => {
+  const btn = e.target.closest('[data-dossier-act]'), item = e.target.closest('[data-group]'); if (!btn || !item) return;
+  const g = groups.get(item.dataset.group); if (!g) return;
+  if (btn.dataset.dossierAct === 'find') { selectDev(g.lastId); showTab('find'); }
+  if (btn.dataset.dossierAct === 'export') download('nexus-ble-dossier-' + Date.now() + '.json', JSON.stringify(dossierFor(g), null, 2), 'application/json');
+  if (btn.dataset.dossierAct === 'mine') { g.members.forEach(id => { memFor(id).mine = true; }); memDirty = true; groups.delete(g.key); }
+  render();
+};
 $('find-sound').onclick = () => {
   soundOn = !soundOn;
   if (soundOn && !audioCtx) { try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { soundOn = false; } }
@@ -1526,6 +1588,35 @@ if (cap.orientation && !cap.orientationNeedsPermission && (cap.android || naviga
 renderHelp();
 requestAnimationFrame(frame);
 render();
+let leakLast = null;
+function leakAudit() {
+  const rows = [...devices.values()].map(d => {
+    const m = mem[d.id] || {}, name = broadcastName(d), mine = isMine(d), familiar = !!(m.familiarMs > FAMILIAR_MS);
+    const sessions = m.sessions || 0, seen = m.seeCount || 0;
+    let level, why;
+    if (mine && name) { level = 'LEAKING'; why = 'Marked yours, and its custom broadcast name is visible to any nearby scanner.'; }
+    else if (mine) { level = 'LOW'; why = 'Marked yours, and it broadcasts no readable custom name.'; }
+    else if (familiar && name) { level = 'CAUTION'; why = 'Familiar device with a readable custom name. Is this yours? If so, that name is broadcast.'; }
+    else if (name) { level = 'INFO'; why = 'Readable custom name, not marked yours. This audit does not identify its owner.'; }
+    else { level = 'LOW'; why = 'No readable custom name broadcast.'; }
+    return { id: d.id, display: displayName(d), broadcastName: name, kind: KIND_LABEL[d.dec ? d.dec.kind : 'UNKNOWN'] || 'Unidentified', mine, familiar, sessions, seen, level, why, sim: d.sim };
+  });
+  const order = { LEAKING: 0, CAUTION: 1, INFO: 2, LOW: 3 };
+  rows.sort((a, b) => order[a.level] - order[b.level]);
+  leakLast = { app: 'NEXUS BLE Tactical Radar', version: VERSION, exported: new Date().toISOString(), disclaimer: 'Audit covers only devices Radar has already heard in this session plus saved memory. Broadcast names shown are already visible to any nearby scanner. No attempt was made to identify owners of unmarked devices. Radar nicknames are local only and are not broadcast.', summary: { leaking: rows.filter(r => r.level === 'LEAKING').length, caution: rows.filter(r => r.level === 'CAUTION').length, info: rows.filter(r => r.level === 'INFO').length, low: rows.filter(r => r.level === 'LOW').length, total: rows.length }, devices: rows };
+  return leakLast;
+}
+function renderLeakAudit() {
+  const out = $('leak-out'); if (!out) return;
+  const a = leakAudit();
+  if (!a.devices.length) { out.innerHTML = 'No devices heard yet. Run a live scan (or stay in PRACTICE to see the simulated set), then run the audit again.'; return; }
+  out.innerHTML = `<div>Leaking: <b class="p">${a.summary.leaking}</b> · Caution: <b class="y">${a.summary.caution}</b> · Info: ${a.summary.info} · Low: ${a.summary.low} · Total: ${a.summary.total}</div>` + a.devices.map(r => {
+    const chip = r.level === 'LEAKING' ? '<span class="chip alert">LEAKING</span>' : r.level === 'CAUTION' ? '<span class="chip tracker">CAUTION</span>' : r.level === 'INFO' ? '<span class="chip proto">INFO</span>' : '<span class="chip paused">LOW</span>';
+    return `<div style="margin-top:.4rem"><b>${esc(r.display)}</b> ${chip}<br><span class="m">${esc(r.kind)} · broadcast name: ${r.broadcastName ? esc(r.broadcastName) : 'none'} · ${r.mine ? 'marked mine' : r.familiar ? 'familiar' : 'not marked yours'} · ${r.sessions} session${r.sessions === 1 ? '' : 's'} · seen ${r.seen}× ${r.sim ? '· PRACTICE' : ''}</span><br>${esc(r.why)}</div>`;
+  }).join('') + '<div style="margin-top:.45rem">Fixes that actually help: rename a leaking device to something generic (not your name), turn Bluetooth off when you are not using it, and mark your own devices as mine in Radar so future audits know they are yours.</div>';
+}
+$('leak-run').onclick = renderLeakAudit;
+$('leak-export').onclick = () => { if (!leakLast) renderLeakAudit(); download('nexus-ble-leak-audit-' + Date.now() + '.json', JSON.stringify(leakLast, null, 2), 'application/json'); };
 window.NEXUS = { version: VERSION, cap, get state() { return state; }, get liveKind() { return liveKind; }, get realRadio() { return realRadio; }, decodeAdv, devices, groups, noLiveReason, readingText };
 })();
 </script>
