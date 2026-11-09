@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.6</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.6 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.7</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.7 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -161,7 +161,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.6</span>
+    <span class="chip ver" id="ver">v4.1.7</span>
   </div>
 </header>
 
@@ -387,17 +387,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.6 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.7 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.6 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.7 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.5';
+const VERSION = '4.1.7';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -488,12 +488,13 @@ function decodeAdv(a) {
     const rules = [[/airtag/,'Apple','TRACKER','AirTag'],[/\btile\b/,'Tile','TRACKER','Tile tracker'],[/chipolo/,'Chipolo','TRACKER','Chipolo tracker'],[/smart ?tag/,'Samsung','TRACKER','Galaxy SmartTag'],
       [/airpods|buds|\bwh-|\bwf-|bose|jbl|beats|headphone|earbud|speaker|soundcore|sennheiser/,null,'AUDIO',null],[/watch|band|fitbit|garmin|whoop|oura|amazfit|forerunner|fenix/,null,'WEARABLE',null],
       [/iphone|pixel|galaxy s|galaxy z|oneplus|phone/,null,'PHONE',null],[/\btv\b|bravia|roku|fire ?tv|chromecast/,null,'MEDIA',null],[/keyboard|mouse|mx /,null,'ACCESSORY',null]];
-    for (const [re, br, kind, prod] of rules) if (re.test(n)) { set(br || out.brand, kind, prod || a.name, kind === 'TRACKER' ? 0.7 : 0.45); break; }
+    for (const [re, br, kind, prod] of rules) if (re.test(n)) { set(br || out.brand, kind, prod || HINT_PRODUCT[kind] || null, kind === 'TRACKER' ? 0.7 : 0.45); break; }
   }
   return out;
 }
 
-const KIND_LABEL = {TRACKER:'Item tracker',AUDIO:'Audio',PHONE:'Phone / tablet',WEARABLE:'Wearable',SENSOR:'Sensor',BEACON:'Beacon',MEDIA:'TV / media',ACCESSORY:'Accessory',COMPUTER:'Computer',FITNESS:'Fitness gear',APPLE:'Apple device',SAMSUNG:'Samsung device',UNKNOWN:'Unidentified'};
+const HINT_PRODUCT = {AUDIO:'Headphones / earbuds',WEARABLE:'Smartwatch / fitness band',PHONE:'Phone',MEDIA:'TV / media player',ACCESSORY:'Keyboard / mouse'};
+const KIND_LABEL = {TRACKER:'Item tracker',AUDIO:'Audio',PHONE:'Phone / tablet',WEARABLE:'Wearable',SENSOR:'Sensor',BEACON:'Beacon',MEDIA:'TV / media',ACCESSORY:'Accessory',COMPUTER:'Computer',FITNESS:'Fitness gear',APPLE:'Apple device',SAMSUNG:'Samsung device',UNKNOWN:'Unknown'};
 /* ---------- State ---------- */
 const devices = new Map();          // id -> device
 const groups = new Map();           // tracker group key -> presence aggregate
@@ -710,13 +711,13 @@ async function pickDevice() {
       bt.addEventListener('advertisementreceived', onLiveAdv);
       await bt.watchAdvertisements(d.abort ? { signal: d.abort.signal } : undefined);
       d.unit = 'dBm'; d.path = 'watch';
-      $('banner-text').textContent = 'Watching ' + displayName(d) + '\u2019s broadcasts (real dBm).';
+      $('banner-text').textContent = 'Watching ' + plainLabel(d) + '\u2019s broadcasts (real dBm).';
       return;
     } catch (e) { /* fall through to link check */ }
   }
   // Path 2 (Bluefy / no RSSI): link-quality probing — unit is 'link' (0–100 %), never dBm
   d.unit = 'link'; d.path = 'link'; d.succEma = 1; d.linkScore = 0; d.latEma = null;
-  $('banner-text').textContent = 'Link-checking ' + displayName(d) + ': NEXUS connects and disconnects to measure how easy the link is. Score is 0–100 % link, not dBm.';
+  $('banner-text').textContent = 'Link-checking ' + plainLabel(d) + ': NEXUS connects and disconnects to measure how easy the link is. Score is 0–100 % link, not dBm.';
   linkLoop(d);
 }
 async function linkLoop(d) {
@@ -924,6 +925,12 @@ function decodedLabel(d) {
   if (dec.brand) return dec.brand + ' device';
   return null;
 }
+/* Plain-language label (v4.1.7): the first thing shown for a device — sweep
+   list, radar plot, FIND, detail and exports. Never a nickname, never a
+   broadcast name, never a code. No usable decode = "Unknown device". */
+function plainLabel(d) {
+  return decodedLabel(d) || 'Unknown device';
+}
 function broadcastName(d) {
   const nice = cleanName(d.advName);
   if (!nice || isCodeLike(nice)) return null;
@@ -939,13 +946,13 @@ function displayName(d) {
   // No usable decode: fall back to a human-looking broadcast name only.
   const nice = broadcastName(d);
   if (nice) return nice;
-  return 'Unidentified device';
+  return plainLabel(d);
 }
 function plainWhy(d) {
   const dec = d.dec || {};
   if (dec.notes && dec.notes.length) return dec.notes[0];
   if (dec.brand) return 'Identified from its Bluetooth company / service IDs, not its broadcast name.';
-  return 'No brand or type could be decoded from its advertisement, so it is shown as unidentified rather than as a code string.';
+  return 'No brand or type could be decoded from its advertisement, so it is shown as unknown rather than as a code string.';
 }
 const isTracker = d => d.dec && d.dec.kind === 'TRACKER';
 const isMine = d => !!(mem[d.id] && mem[d.id].mine);
@@ -1143,7 +1150,7 @@ function drawRadar(now) {
   // labels: highest priority first, skip any that would overlap one already drawn
   ctx.font = '10px ui-monospace,monospace'; const placed = [];
   labels.sort((a,b) => a.pri - b.pri).forEach(L => {
-    const label = displayName(L.d).slice(0,24), w = ctx.measureText(label).width;
+    const label = plainLabel(L.d).slice(0,24), w = ctx.measureText(label).width;
     const lx = L.x + 10 + w > W ? L.x - 10 - w : L.x + 10, box = [lx - 2, L.y - 17, lx + w + 2, L.y - 3];
     if (placed.some(b => box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1])) return;
     placed.push(box); ctx.fillStyle = '#0a0a0fb0'; ctx.fillRect(box[0], box[1], box[2]-box[0], box[3]-box[1]);
@@ -1172,7 +1179,7 @@ function drawWalk(now) {
   const bx = rel == null ? CX : CX + Math.sin(rel) * W*0.3 * (1-close*0.5), by = horizon + (H-horizon)*(0.12 + close*0.45), size = 6 + close*38;
   ctx.save(); ctx.shadowBlur = 30; ctx.shadowColor = colorFor(d); ctx.fillStyle = colorFor(d); ctx.beginPath(); ctx.arc(bx,by,size,0,Math.PI*2); ctx.fill();
   ctx.strokeStyle = '#60efff'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(bx,by-40-close*40); ctx.stroke(); ctx.restore();
-  ctx.fillStyle = '#00ff87'; ctx.font = '13px ui-monospace,monospace'; ctx.fillText(displayName(d).slice(0,28), 14, 74);
+  ctx.fillStyle = '#00ff87'; ctx.font = '13px ui-monospace,monospace'; ctx.fillText(plainLabel(d).slice(0,28), 14, 74);
   ctx.fillStyle = '#60efff'; ctx.font = '11px ui-monospace,monospace';
   ctx.fillText('About ' + Math.round(ft) + ' ft (estimate' + (d.unit === 'link' ? ' from link %' : '') + ')', 14, 92);
   ctx.fillText(d.bearing != null ? 'Bearing (' + (d.bearingSrc === 'turn' ? 'compass turn' : 'sweep') + '): ' + dirName(d.bearing) : d.sim ? 'Simulated direction: ' + dirName(d.angle) : 'Direction unknown — COMPASS + turn in a circle, or SWEEP in FIND', 14, 108);
@@ -1221,9 +1228,10 @@ function renderList() {
     const brand = dec.brand ? esc(dec.brand) + ' · ' : '';
     const bc = broadcastName(d);
     const bcLine = (bc && bc !== displayName(d)) ? `<div class="meta">Broadcast name: ${esc(bc)}</div>` : '';
+    const nickLine = m.nickname ? `<div class="meta">Saved as: ${esc(m.nickname)}</div>` : '';
     return `<div class="dev ${d.id===selectedId?'sel':''} ${isFav(d)?'fav':''} ${isTracker(d)&&!isMine(d)?'trk':''}" data-id="${esc(d.id)}" role="button" tabindex="0">
-      <div class="left"><div class="nm">${esc(displayName(d))}</div>
-        <div class="meta">${brand}${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.conf ? ' · ' + Math.round(dec.conf*100) + '% sure' : ''} · seen ${d.sightings}× · ${fmtDur(d.presentMs)}</div>${bcLine}
+      <div class="left"><div class="nm">${esc(plainLabel(d))}</div>
+        <div class="meta">${brand}${esc(KIND_LABEL[dec.kind] || 'Unknown')}${dec.conf ? ' · ' + Math.round(dec.conf*100) + '% sure' : ''} · seen ${d.sightings}× · ${fmtDur(d.presentMs)}</div>${bcLine}${nickLine}
         <div class="tags">${tagChips(d)}</div></div>
       <div class="r"><div class="rssi">${esc(readingText(d))}</div><div class="ft">~${Math.round(d.distM*M2FT)} ft</div></div></div>`;
   }).join('') : `<div class="empty">${state === 'live' ? (liveKind === 'pick' && !bleScan ? 'Tap + TRACK A DEVICE to pick a real device.' : 'Listening… no advertisements yet. Bring a Bluetooth device close.') : realRadio ? 'LIVE stopped.' : devices.size === 0 && state === 'practice' ? 'Starting simulated devices…' : 'Nothing matches this filter.'}</div>`;
@@ -1233,8 +1241,8 @@ function renderDetail() {
   $('detail').style.display = d ? '' : 'none';
   if (!d) return;
   const dec = d.dec || {}, m = memFor(d.id);
-  $('d-name').textContent = displayName(d);
-  $('d-brand').innerHTML = `${esc(dec.brand || 'Unknown brand')} · ${esc(KIND_LABEL[dec.kind] || 'Unidentified')}${dec.product && dec.product !== displayName(d) ? ' · ' + esc(dec.product) : ''}${dec.conf ? ` · <span class="c">${Math.round(dec.conf*100)}% sure</span>` : ''}<br><span class="mut">${esc(plainWhy(d))}</span>${broadcastName(d) && broadcastName(d) !== displayName(d) ? `<br><span class="mut">Broadcast name: ${esc(broadcastName(d))}</span>` : ''}`;
+  $('d-name').textContent = plainLabel(d);
+  $('d-brand').innerHTML = `${esc(dec.brand || 'Unknown brand')} · ${esc(KIND_LABEL[dec.kind] || 'Unknown')}${dec.product && dec.product !== displayName(d) ? ' · ' + esc(dec.product) : ''}${dec.conf ? ` · <span class="c">${Math.round(dec.conf*100)}% sure</span>` : ''}<br><span class="mut">${esc(plainWhy(d))}</span>${broadcastName(d) && broadcastName(d) !== displayName(d) ? `<br><span class="mut">Broadcast name: ${esc(broadcastName(d))}</span>` : ''}`;
   $('d-tags').innerHTML = tagChips(d);
   $('d-dist').textContent = 'About ' + Math.round(d.distM*M2FT) + ' ft';
   $('d-rssi-lbl').textContent = d.unit === 'link' ? 'LINK QUALITY (not dBm)' : 'SIGNAL (smoothed)';
@@ -1277,7 +1285,7 @@ function renderWatch() {
 }
 function renderPro() {
   const d = selectedId && devices.get(selectedId);
-  $('pro-target').innerHTML = d ? `Target: <b class="c">${esc(displayName(d))}</b> ${d.sim ? '<span class="chip sim">PRACTICE</span>' : '<span class="chip live">LIVE</span>'}${d.unit === 'link' ? ' <span class="chip proto">LINK % · not dBm</span>' : ''}` : 'Pick a device in DEVICES or tap a radar dot.';
+  $('pro-target').innerHTML = d ? `Target: <b class="c">${esc(plainLabel(d))}</b> ${d.sim ? '<span class="chip sim">PRACTICE</span>' : '<span class="chip live">LIVE</span>'}${d.unit === 'link' ? ' <span class="chip proto">LINK % · not dBm</span>' : ''}` : 'Pick a device in DEVICES or tap a radar dot.';
   const mc = $('mon'), mx = mc.getContext('2d'); mx.clearRect(0,0,mc.width,mc.height);
   mx.strokeStyle = '#ffffff12'; for (let db = -100; db <= -30; db += 10) { const y = (( -30 - db) / 70) * mc.height; mx.beginPath(); mx.moveTo(0,y); mx.lineTo(mc.width,y); mx.stroke(); }
   if (!d) { ['mon-rssi','mon-dist','mon-q','mon-sd','mon-rate'].forEach(i => $(i).textContent = '—'); renderDecoder(null); return; }
@@ -1324,7 +1332,7 @@ let lastTrend = 'STEADY';
 function renderFind() {
   const d = selectedId && devices.get(selectedId);
   if (!d) { $('find-target').textContent = 'Pick a device first (DEVICES tab, radar dot, or FIND IT on a watch alert).'; $('find-heat').textContent = '—'; $('find-trend').textContent = '—'; return; }
-  $('find-target').innerHTML = `Finding <b class="c">${esc(displayName(d))}</b> · ~${Math.round(d.distM*M2FT)} ft · ${esc(readingText(d))} ${d.sim ? '<span class="chip sim">PRACTICE</span>' : ''}`;
+  $('find-target').innerHTML = `Finding <b class="c">${esc(plainLabel(d))}</b> · ~${Math.round(d.distM*M2FT)} ft · ${esc(readingText(d))} ${d.sim ? '<span class="chip sim">PRACTICE</span>' : ''}`;
   const h = heatOf(d); $('find-needle').style.left = `calc(${(h*100).toFixed(1)}% - 2px)`;
   const lbl = h > 0.75 ? 'HOT' : h > 0.5 ? 'WARM' : h > 0.25 ? 'COOL' : 'COLD';
   const heat = $('find-heat'); heat.textContent = lbl; heat.style.color = h > 0.75 ? '#ff0080' : h > 0.5 ? '#ffcc00' : h > 0.25 ? '#00ff87' : '#60efff';
@@ -1502,7 +1510,7 @@ let hollowExplained = false;
 function showHollowHelp(d) {
   if (!d) return;
   hollowExplained = true;
-  $('hollow-device').textContent = 'Device: ' + displayName(d) + ' · about ' + Math.round(d.distM*M2FT) + ' ft · ' + readingText(d);
+  $('hollow-device').textContent = 'Device: ' + plainLabel(d) + ' · about ' + Math.round(d.distM*M2FT) + ' ft · ' + readingText(d);
   $('hollow-link-note').style.display = d.unit === 'link' ? '' : 'none';
   $('hollow-help').classList.add('on');
 }
@@ -1565,7 +1573,7 @@ if (!cap.gatt) $('gatt-pick').textContent = 'PICK & CONNECT (unavailable here)';
 
 function rowsForExport() {
   return [...devices.values()].map(d => { const m = mem[d.id] || {}, dec = d.dec || {};
-    return { source: d.sim ? 'PRACTICE' : 'LIVE', name: displayName(d), brand: dec.brand || '', type: KIND_LABEL[dec.kind] || '', confidence_pct: Math.round((dec.conf||0)*100),
+    return { source: d.sim ? 'PRACTICE' : 'LIVE', plain_label: plainLabel(d), name: displayName(d), brand: dec.brand || '', type: KIND_LABEL[dec.kind] || 'Unknown', confidence_pct: Math.round((dec.conf||0)*100),
       browser_id: d.id, unit: d.unit, rssi_dbm: d.unit === 'link' || !d.hasReading ? '' : Math.round(d.filt), link_pct: d.unit === 'link' ? Math.round(d.linkScore||0) : '',
       direction: d.sim ? 'simulated' : d.bearing != null ? dirName(d.bearing) : 'unknown', about_ft: Math.round(d.distM*M2FT), seen_this_session: d.sightings, seen_total: m.seeCount || 0,
       first_seen: m.firstSeen ? new Date(m.firstSeen).toISOString() : '', nearby_s: Math.round(d.presentMs/1000), saved: !!m.favorite, mine: !!m.mine, nickname: m.nickname || '',
@@ -1620,7 +1628,7 @@ function leakAudit() {
     else if (familiar && name) { level = 'CAUTION'; why = 'Familiar device with a readable custom name. Is this yours? If so, that name is broadcast.'; }
     else if (name) { level = 'INFO'; why = 'Readable custom name, not marked yours. This audit does not identify its owner.'; }
     else { level = 'LOW'; why = 'No readable custom name broadcast.'; }
-    return { id: d.id, display: displayName(d), broadcastName: name, kind: KIND_LABEL[d.dec ? d.dec.kind : 'UNKNOWN'] || 'Unidentified', mine, familiar, sessions, seen, level, why, sim: d.sim };
+    return { id: d.id, display: plainLabel(d), broadcastName: name, kind: KIND_LABEL[d.dec ? d.dec.kind : 'UNKNOWN'] || 'Unknown', mine, familiar, sessions, seen, level, why, sim: d.sim };
   });
   const order = { LEAKING: 0, CAUTION: 1, INFO: 2, LOW: 3 };
   rows.sort((a, b) => order[a.level] - order[b.level]);
