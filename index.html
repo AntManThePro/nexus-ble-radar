@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.10</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.10 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.11</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.11 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -161,7 +161,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.10</span>
+    <span class="chip ver" id="ver">v4.1.11</span>
   </div>
 </header>
 
@@ -387,17 +387,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.10 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.11 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.10 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.11 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.10';
+const VERSION = '4.1.11';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -432,7 +432,9 @@ const SVC = {
   0xFE1F:'Garmin',0xFE03:'Amazon',0xFE00:'Amazon',0xFEBE:'Bose',0xFD82:'Sony',0xFDDB:'Samsung'
 };
 const short = uuid => { if (typeof uuid === 'number') return uuid; const m = /^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(uuid||''); return m ? parseInt(m[1],16) : null; };
-const svcName = u => { const s = short(u); return s != null ? (SVC[s] ? h4(s)+' '+SVC[s] : h4(s)) : String(u); };
+// 128-bit custom services worth naming (not in the 16-bit SVC map above)
+const SVC128 = { 'd0611e78-bbb4-4591-a5f8-487910ae4366':'Apple · Continuity', '9fa480e0-4967-4542-9390-d343dc5d04ae':'Apple · Nearby' };
+const svcName = u => { const s = short(u); if (s != null) return SVC[s] ? h4(s)+' '+SVC[s] : h4(s); const l = String(u||'').toLowerCase(); return SVC128[l] || String(u); };
 const APPLE_TYPES = {0x02:'iBeacon',0x03:'AirPrint',0x05:'AirDrop',0x06:'HomeKit',0x07:'Proximity Pairing (AirPods/Beats)',0x09:'AirPlay Target',0x0A:'AirPlay Source',0x0B:'Magic Switch',0x0C:'Handoff',0x0D:'Tethering Target',0x0E:'Tethering Source',0x0F:'Nearby Action',0x10:'Nearby Info',0x12:'Find My (offline finding)',0x16:'Nearby (Apple)'};
 
 /* ---------- Decode an advertisement into brand / type / name guess ---------- */
@@ -1473,7 +1475,10 @@ async function gattPick() {
       let chars = []; try { chars = await s.getCharacteristics(); } catch (e) {}
       for (const c of chars) {
         const p = c.properties, props = ['read','write','writeWithoutResponse','notify','indicate'].filter(k => p[k]).join(',');
-        let val = ''; const k = c.uuid.slice(0,8);
+        // (v4.1.11) Normalize the characteristic UUID to its 8-hex form before
+        // the READ lookup: full 128-bit in Chrome, short "2A29" in Bluefy.
+        const ku = String(c.uuid||'').toLowerCase();
+        let val = ''; const k = ku.length <= 4 ? '0000' + ku.padStart(4,'0') : ku.slice(0,8);
         if (p.read && READ[k]) { try { const v = await c.readValue(); val = k === '00002a19' ? ' = ' + v.getUint8(0) + '%' : ' = "' + new TextDecoder().decode(v) + '"'; } catch (e) { val = ' (read blocked)'; } }
         lines.push('   · ' + (READ[k] || c.uuid) + ' [' + props + ']' + val);
       }
