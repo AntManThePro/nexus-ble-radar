@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>NEXUS · BLE Tactical Radar v4.1.11</title>
-<meta name="description" content="NEXUS BLE Tactical Radar v4.1.11 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
+<title>NEXUS · BLE Tactical Radar v4.1.12</title>
+<meta name="description" content="NEXUS BLE Tactical Radar v4.1.12 — personal-safety Bluetooth LE radar: find your own stuff, check for unknown item trackers travelling with you, honest LIVE/PRACTICE modes (Chrome scan, pick-one tracking, Bluefy on iPhone), brand decode, signal monitor and hot/cold find mode.">
 <meta name="theme-color" content="#0a0a0f">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
@@ -161,7 +161,7 @@ footer a{color:var(--c)}
     <span id="chip-mode" class="chip practice" data-testid="mode-chip" role="button" tabindex="0" title="What mode am I in? Tap for HOW TO GO LIVE">PRACTICE</span>
     <span id="chip-follow" class="chip alert" style="display:none">⚠ TRACKER</span>
     <span class="chip proto" title="Some tools are prototypes limited by what browsers allow">PROTO</span>
-    <span class="chip ver" id="ver">v4.1.11</span>
+    <span class="chip ver" id="ver">v4.1.12</span>
   </div>
 </header>
 
@@ -387,17 +387,17 @@ footer a{color:var(--c)}
 </div>
 
 <footer>
-  NEXUS BLE Tactical Radar v4.1.11 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
+  NEXUS BLE Tactical Radar v4.1.12 · Original NEXUS design by DoubleA (AntManThePro) · MIT · Includes KalmanJS (MIT, Wouter Bulten). Distances and directions are estimates. Tracker Watch is a personal-safety aid for spotting unknown item trackers travelling with you, not proof of tracking. LIVE on iPhone via Bluefy (link % is not dBm).
 </footer>
 <script>
 // KalmanJS (MIT) — Wouter Bulten — https://github.com/wouterbulten/kalmanjs — inlined
 var KalmanFilter=function(){"use strict";function s(t,i){for(var e=0;e<i.length;e++){var s=i[e];s.enumerable=s.enumerable||!1,s.configurable=!0,"value"in s&&(s.writable=!0),Object.defineProperty(t,s.key,s)}}return function(){function v(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:{},i=t.R,e=void 0===i?1:i,s=t.Q,n=void 0===s?1:s,r=t.A,h=void 0===r?1:r,a=t.B,o=void 0===a?0:a,u=t.C,c=void 0===u?1:u;!function(t,i){if(!(t instanceof i))throw new TypeError("Cannot call a class as a function")}(this,v),this.R=e,this.Q=n,this.A=h,this.C=c,this.B=o,this.cov=NaN,this.x=NaN}var t,i,e;return t=v,(i=[{key:"filter",value:function(t){var i=1<arguments.length&&void 0!==arguments[1]?arguments[1]:0;if(isNaN(this.x))this.x=1/this.C*t,this.cov=1/this.C*this.Q*(1/this.C);else{var e=this.predict(i),s=this.uncertainty(),n=s*this.C*(1/(this.C*s*this.C+this.Q));this.x=e+n*(t-this.C*e),this.cov=s-n*this.C*s}return this.x}},{key:"predict",value:function(){var t=0<arguments.length&&void 0!==arguments[0]?arguments[0]:0;return this.A*this.x+this.B*t}},{key:"uncertainty",value:function(){return this.A*this.cov*this.A+this.R}},{key:"lastMeasurement",value:function(){return this.x}},{key:"setMeasurementNoise",value:function(t){this.Q=t}},{key:"setProcessNoise",value:function(t){this.R=t}}])&&s(t.prototype,i),e&&s(t,e),v}()}();
 </script>
 <script>
-/* NEXUS · BLE Tactical Radar v4.1.11 — DoubleA (AntManThePro) — MIT */
+/* NEXUS · BLE Tactical Radar v4.1.12 — DoubleA (AntManThePro) — MIT */
 (() => {
 'use strict';
-const VERSION = '4.1.11';
+const VERSION = '4.1.12';
 const M2FT = 3.28084;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -429,7 +429,8 @@ const SVC = {
   0xFCB2:'DULT unwanted-tracking (Apple-assigned)',0xFD44:'Apple · Find My accessory',0xFD5A:'Samsung · SmartTag',0xFD59:'Samsung',0xFD69:'Samsung',
   0xFD6F:'Exposure Notification',0xFD84:'Tile',0xFE2C:'Google · Fast Pair',0xFE33:'Chipolo',0xFE65:'Chipolo',0xFE95:'Xiaomi · MiBeacon',
   0xFE9F:'Google',0xFEAA:'Google · Eddystone',0xFEB2:'Microsoft',0xFEC7:'Apple',0xFED8:'Google',0xFEEC:'Tile',0xFEED:'Tile',0xFE59:'Nordic DFU',
-  0xFE1F:'Garmin',0xFE03:'Amazon',0xFE00:'Amazon',0xFEBE:'Bose',0xFD82:'Sony',0xFDDB:'Samsung'
+  0xFE1F:'Garmin',0xFE03:'Amazon',0xFE00:'Amazon',0xFEBE:'Bose',0xFD82:'Sony',0xFDDB:'Samsung',
+  0xFFD5:'LED light control (HappyLighting/Triones)',0xFFD0:'LED light notify (HappyLighting/Triones)'
 };
 const short = uuid => { if (typeof uuid === 'number') return uuid; const m = /^0000([0-9a-f]{4})-0000-1000-8000-00805f9b34fb$/i.exec(uuid||''); return m ? parseInt(m[1],16) : null; };
 // 128-bit custom services worth naming (not in the 16-bit SVC map above)
@@ -480,6 +481,7 @@ function decodeAdv(a) {
   if (svcs.has(0xFE2C)) set('Google','AUDIO','Fast Pair accessory',0.55,'Google Fast Pair');
   if (svcs.has(0xFD6F)) set(out.brand,'PHONE','Phone (Exposure Notification)',0.5);
   if (svcs.has(0xFE95)) set('Xiaomi','SENSOR','Xiaomi sensor (MiBeacon)',0.6);
+  if (svcs.has(0xFFD5) || svcs.has(0xFFD0)) set(null,'LIGHT','LED light (HappyLighting/Triones)',0.7,'Advertises the HappyLighting LED control services');
   if (svcs.has(0x180D)) set(out.brand,'WEARABLE','Heart-rate sensor',0.55);
   if (svcs.has(0x1812)) set(out.brand,'ACCESSORY','Keyboard / mouse (HID)',0.55);
   if (svcs.has(0x1826) || svcs.has(0x1816) || svcs.has(0x1818)) set(out.brand,'FITNESS','Fitness equipment',0.55);
@@ -496,7 +498,7 @@ function decodeAdv(a) {
 }
 
 const HINT_PRODUCT = {AUDIO:'Headphones / earbuds',WEARABLE:'Smartwatch / fitness band',PHONE:'Phone',MEDIA:'TV / media player',ACCESSORY:'Keyboard / mouse'};
-const KIND_LABEL = {TRACKER:'Item tracker',AUDIO:'Audio',PHONE:'Phone / tablet',WEARABLE:'Wearable',SENSOR:'Sensor',BEACON:'Beacon',MEDIA:'TV / media',ACCESSORY:'Accessory',COMPUTER:'Computer',FITNESS:'Fitness gear',APPLE:'Apple device',SAMSUNG:'Samsung device',UNKNOWN:'Unknown'};
+const KIND_LABEL = {TRACKER:'Item tracker',AUDIO:'Audio',PHONE:'Phone / tablet',WEARABLE:'Wearable',SENSOR:'Sensor',BEACON:'Beacon',MEDIA:'TV / media',ACCESSORY:'Accessory',COMPUTER:'Computer',FITNESS:'Fitness gear',APPLE:'Apple device',SAMSUNG:'Samsung device',LIGHT:'LED light',UNKNOWN:'Unknown'};
 /* ---------- State ---------- */
 const devices = new Map();          // id -> device
 const groups = new Map();           // tracker group key -> presence aggregate
